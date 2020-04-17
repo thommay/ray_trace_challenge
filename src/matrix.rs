@@ -1,7 +1,14 @@
+use crate::vec3::TypedVec;
 use anyhow::*;
 use num::Float;
-use std::fmt::Debug;
+use std::fmt::{Debug, Display};
 use std::ops::{AddAssign, Mul, Neg, Sub};
+
+pub enum Axis {
+    X,
+    Y,
+    Z,
+}
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd)]
 pub struct Matrix<T>
@@ -37,6 +44,24 @@ where
         Self::from_iter(rows, cols, (0..).map(|_| T::default()))
     }
 
+    pub fn identity(size: usize) -> Matrix<T> {
+        Self {
+            rows: size,
+            cols: size,
+            data: {
+                let mut d: Vec<T> = (0..size * size).map(|_| T::default()).collect();
+                for r in 0..size {
+                    for c in 0..size {
+                        if r == c {
+                            d[c + r * size] = T::one();
+                        }
+                    }
+                }
+                d
+            },
+        }
+    }
+
     pub fn from_iter(rows: usize, cols: usize, data: impl IntoIterator<Item = T>) -> Matrix<T> {
         Matrix {
             rows,
@@ -47,6 +72,45 @@ where
                 data
             },
         }
+    }
+
+    pub fn translation(x: T, y: T, z: T) -> Matrix<T> {
+        let mut i = Self::identity(4);
+        i.set(0, 3, x);
+        i.set(1, 3, y);
+        i.set(2, 3, z);
+        i
+    }
+
+    pub fn scaling(x: T, y: T, z: T) -> Matrix<T> {
+        let mut i = Self::identity(4);
+        i.set(0, 0, x);
+        i.set(1, 1, y);
+        i.set(2, 2, z);
+        i
+    }
+
+    pub fn rotation(axis: Axis, distance: T) -> Matrix<T> {
+        match axis {
+            Axis::X => Self::rotate_x(distance),
+            Axis::Y => Self::rotate_y(distance),
+            Axis::Z => Self::rotate_z(distance),
+        }
+    }
+
+    pub fn shearing(xy: T, xz: T, yx: T, yz: T, zx: T, zy: T) -> Matrix<T> {
+        let mut m = Matrix::new(4, 4);
+        m.set(0, 0, T::one());
+        m.set(0, 1, xy);
+        m.set(0, 2, xz);
+        m.set(1, 0, yx);
+        m.set(1, 1, T::one());
+        m.set(1, 2, yz);
+        m.set(2, 0, zx);
+        m.set(2, 1, zy);
+        m.set(2, 2, T::one());
+        m.set(3, 3, T::one());
+        m
     }
 
     pub fn get(&self, row: usize, col: usize) -> Option<&T> {
@@ -188,6 +252,39 @@ where
             },
         }
     }
+
+    fn rotate_x(distance: T) -> Matrix<T> {
+        let mut m = Matrix::new(4, 4);
+        m.set(0, 0, T::one());
+        m.set(1, 1, distance.cos());
+        m.set(1, 2, -distance.sin());
+        m.set(2, 1, distance.sin());
+        m.set(2, 2, distance.cos());
+        m.set(3, 3, T::one());
+        m
+    }
+
+    fn rotate_y(distance: T) -> Matrix<T> {
+        let mut m = Matrix::new(4, 4);
+        m.set(0, 0, distance.cos());
+        m.set(0, 2, distance.sin());
+        m.set(1, 1, T::one());
+        m.set(2, 0, -distance.sin());
+        m.set(2, 2, distance.cos());
+        m.set(3, 3, T::one());
+        m
+    }
+
+    fn rotate_z(distance: T) -> Matrix<T> {
+        let mut m = Matrix::new(4, 4);
+        m.set(0, 0, distance.cos());
+        m.set(0, 1, -distance.sin());
+        m.set(1, 0, distance.sin());
+        m.set(1, 1, distance.cos());
+        m.set(2, 2, T::one());
+        m.set(3, 3, T::one());
+        m
+    }
 }
 
 impl<T> Mul<Matrix<T>> for Matrix<T>
@@ -200,7 +297,8 @@ where
         + Copy
         + Clone
         + Default
-        + Debug,
+        + Debug
+        + Display,
 {
     type Output = Matrix<T>;
 
@@ -230,22 +328,70 @@ where
     }
 }
 
+impl<T> Mul<TypedVec<T>> for Matrix<T>
+where
+    T: Mul<Output = T>
+        + Sub<Output = T>
+        + Neg<Output = T>
+        + Float
+        + AddAssign
+        + Copy
+        + Clone
+        + Default
+        + Debug
+        + Display
+        + Into<f64>,
+{
+    type Output = TypedVec<T>;
+
+    fn mul(self, rhs: TypedVec<T>) -> Self::Output {
+        assert!(self.cols == 4);
+        let vec = vec![rhs.x, rhs.y, rhs.z, rhs.w];
+        TypedVec {
+            x: {
+                let row = self.get_row(0).unwrap();
+                let mut iter = row.zip(&vec);
+                let (a, b) = iter.next().unwrap();
+                let mut acc = *a * *b;
+                for (a, b) in iter {
+                    acc += *a * *b;
+                }
+                acc
+            },
+            y: {
+                let row = self.get_row(1).unwrap();
+                let mut iter = row.zip(&vec);
+                let (a, b) = iter.next().unwrap();
+                let mut acc = *a * *b;
+                for (a, b) in iter {
+                    acc += *a * *b;
+                }
+                acc
+            },
+            z: {
+                let row = self.get_row(2).unwrap();
+                let mut iter = row.zip(&vec);
+                let (a, b) = iter.next().unwrap();
+                let mut acc = *a * *b;
+                for (a, b) in iter {
+                    acc += *a * *b;
+                }
+                acc
+            },
+            w: rhs.w,
+            is: rhs.is,
+        }
+    }
+}
+
 #[cfg(test)]
 mod test {
-    use crate::matrix::Matrix;
-
-    fn identity() -> Matrix<f32> {
-        let mut identity = Matrix::new(4, 4);
-        identity.set(0, 0, 1.0);
-        identity.set(1, 1, 1.0);
-        identity.set(2, 2, 1.0);
-        identity.set(3, 3, 1.0);
-        identity
-    }
+    use crate::matrix::{Axis, Matrix};
+    use crate::vec3::TypedVec;
 
     #[test]
     fn test_identity() {
-        let i = identity();
+        let i = Matrix::identity(4);
         let data = vec![
             0.0, 1.0, 2.0, 4.0, 1.0, 2.0, 4.0, 8.0, 2.0, 4.0, 8.0, 16.0, 4.0, 8.0, 16.0, 32.0,
         ];
@@ -289,7 +435,9 @@ mod test {
 
     #[test]
     fn test_identity_transpose() {
-        assert_eq!(identity().transpose(), identity());
+        let out: Matrix<f64> = Matrix::identity(4);
+        let out = out.transpose();
+        assert_eq!(out, Matrix::identity(4));
     }
 
     #[test]
@@ -461,6 +609,175 @@ mod test {
             ],
         );
         let c = a.clone() * b.clone();
-        assert_eq!((c * b.inverse().unwrap()).round(100000f32), a)
+        assert_eq!((c * b.inverse().unwrap()).round(100000f64), a)
+    }
+
+    #[test]
+    fn test_translate_no_vector() {
+        let i = Matrix::translation(5.0, -3.0, 2.0);
+        let p = TypedVec::vector(-3f64, 4f64, 5f64);
+        assert_eq!(i * p, p)
+    }
+
+    #[test]
+    fn test_translate_matrix() {
+        let i = Matrix::translation(5.0, -3.0, 2.0);
+        let p = TypedVec::point(-3f64, 4f64, 5f64);
+        assert_eq!(i * p, TypedVec::point(2f64, 1f64, 7f64))
+    }
+
+    #[test]
+    fn test_inverse_translate_matrix() {
+        let i = Matrix::translation(5.0, -3.0, 2.0).inverse().unwrap();
+        let p = TypedVec::point(-3f64, 4f64, 5f64);
+        assert_eq!(i * p, TypedVec::point(-8f64, 7f64, 3f64))
+    }
+
+    #[test]
+    fn test_scaling_matrix() {
+        let i = Matrix::scaling(2.0, 3.0, 4.0);
+        let p = TypedVec::point(-4f64, 6f64, 8f64);
+        assert_eq!(i * p, TypedVec::point(-8f64, 18f64, 32f64))
+    }
+
+    #[test]
+    fn test_scaling_vector() {
+        let i = Matrix::scaling(2.0, 3.0, 4.0);
+        let p = TypedVec::vector(-4f64, 6f64, 8f64);
+        assert_eq!(i * p, TypedVec::vector(-8f64, 18f64, 32f64))
+    }
+
+    #[test]
+    fn test_inverse_scaling_matrix() {
+        let i = Matrix::scaling(2.0, 3.0, 4.0).inverse().unwrap();
+        let p = TypedVec::vector(-4f64, 6f64, 8f64);
+        assert_eq!(i * p, TypedVec::vector(-2f64, 2f64, 2f64))
+    }
+
+    #[test]
+    fn test_reflection() {
+        let i = Matrix::scaling(-1.0, 1.0, 1.0).inverse().unwrap();
+        let p = TypedVec::point(2f64, 3f64, 4f64);
+        assert_eq!(i * p, TypedVec::point(-2f64, 3f64, 4f64))
+    }
+
+    #[test]
+    fn test_rotate_x() {
+        let p = TypedVec::point(0f64, 1f64, 0f64);
+        let q = Matrix::rotation(Axis::X, std::f64::consts::PI / 4f64);
+        let h = Matrix::rotation(Axis::X, std::f64::consts::PI / 2f64);
+        assert_eq!(
+            (q.clone() * p).round(10000f64),
+            TypedVec::point(0f64, 2f64.sqrt() / 2f64, 2f64.sqrt() / 2f64).round(10000f64)
+        );
+        assert_eq!(
+            (h * p).round(10000f64),
+            TypedVec::point(0f64, 0f64, 1f64).round(10000f64)
+        );
+        let inv = q.inverse().unwrap();
+        assert_eq!(
+            (inv * p).round(10000f64),
+            TypedVec::point(0f64, 2f64.sqrt() / 2f64, -(2f64.sqrt() / 2f64)).round(10000f64)
+        );
+    }
+
+    #[test]
+    fn test_rotate_y() {
+        let p = TypedVec::point(0f64, 0f64, 1f64);
+        let q = Matrix::rotation(Axis::Y, std::f64::consts::PI / 4f64);
+        let h = Matrix::rotation(Axis::Y, std::f64::consts::PI / 2f64);
+        assert_eq!(
+            (q.clone() * p).round(10000f64),
+            TypedVec::point(2f64.sqrt() / 2f64, 0f64, 2f64.sqrt() / 2f64).round(10000f64)
+        );
+        assert_eq!(
+            (h * p).round(10000f64),
+            TypedVec::point(1f64, 0f64, 0f64).round(10000f64)
+        );
+    }
+
+    #[test]
+    fn test_rotate_z() {
+        let p = TypedVec::point(0f64, 1f64, 0f64);
+        let q = Matrix::rotation(Axis::Z, std::f64::consts::PI / 4f64);
+        let h = Matrix::rotation(Axis::Z, std::f64::consts::PI / 2f64);
+        assert_eq!(
+            (q.clone() * p).round(10000f64),
+            TypedVec::point(-(2f64.sqrt() / 2f64), 2f64.sqrt() / 2f64, 0f64).round(10000f64)
+        );
+        assert_eq!(
+            (h * p).round(10000f64),
+            TypedVec::point(-1f64, 0f64, 0f64).round(10000f64)
+        );
+    }
+
+    #[test]
+    fn test_shearing() {
+        let sxy = Matrix::shearing(1f64, 0f64, 0f64, 0f64, 0f64, 0f64);
+        let p = TypedVec::point(2f64, 3f64, 4f64);
+        assert_eq!(
+            (sxy * p).round(10000f64),
+            TypedVec::point(5f64, 3f64, 4f64).round(10000f64)
+        );
+
+        let sxz = Matrix::shearing(0f64, 1f64, 0f64, 0f64, 0f64, 0f64);
+        assert_eq!(
+            (sxz * p).round(10000f64),
+            TypedVec::point(6f64, 3f64, 4f64).round(10000f64)
+        );
+
+        let syx = Matrix::shearing(0f64, 0f64, 1f64, 0f64, 0f64, 0f64);
+        assert_eq!(
+            (syx * p).round(10000f64),
+            TypedVec::point(2f64, 5f64, 4f64).round(10000f64)
+        );
+
+        let syz = Matrix::shearing(0f64, 0f64, 0f64, 1f64, 0f64, 0f64);
+        assert_eq!(
+            (syz * p).round(10000f64),
+            TypedVec::point(2f64, 7f64, 4f64).round(10000f64)
+        );
+
+        let szx = Matrix::shearing(0f64, 0f64, 0f64, 0f64, 1f64, 0f64);
+        assert_eq!(
+            (szx * p).round(10000f64),
+            TypedVec::point(2f64, 3f64, 6f64).round(10000f64)
+        );
+
+        let szy = Matrix::shearing(0f64, 0f64, 0f64, 0f64, 0f64, 1f64);
+        assert_eq!(
+            (szy * p).round(10000f64),
+            TypedVec::point(2f64, 3f64, 7f64).round(10000f64)
+        );
+    }
+
+    #[test]
+    fn test_transforms_sequence() {
+        let p = TypedVec::point(1f64, 0f64, 1f64);
+        let a = Matrix::rotation(Axis::X, std::f64::consts::PI / 2f64);
+        let b = Matrix::scaling(5f64, 5f64, 5f64);
+        let c = Matrix::translation(10f64, 5f64, 7f64);
+
+        let p2 = a.clone() * p;
+        assert_eq!(
+            p2.round(10000f64),
+            TypedVec::point(1f64, -1f64, 0f64).round(10000f64)
+        );
+        let p3 = b.clone() * p2;
+        assert_eq!(
+            p3.round(10000f64),
+            TypedVec::point(5f64, -5f64, 0f64).round(10000f64)
+        );
+        let p4 = c.clone() * p3;
+        assert_eq!(
+            p4.round(10000f64),
+            TypedVec::point(15f64, 0f64, 7f64).round(10000f64)
+        );
+
+        let t = c * b * a;
+        assert_eq!(
+            (t * p).round(10000f64),
+            TypedVec::point(15f64, 0f64, 7f64).round(10000f64)
+        );
     }
 }

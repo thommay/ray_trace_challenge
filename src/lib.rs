@@ -8,4 +8,5 @@ mod tests {
 
 pub mod canvas;
 pub mod matrix;
+pub mod ray;
 pub mod vec3;
