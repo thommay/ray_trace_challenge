@@ -5,7 +5,7 @@ use std::fmt::Write;
 pub struct Canvas {
     pub width: usize,
     pub height: usize,
-    pixels: Vec<TypedVec<f64>>,
+    pixels: Vec<TypedVec>,
 }
 
 impl Canvas {
@@ -40,18 +40,18 @@ impl Canvas {
         s
     }
 
-    pub fn fill(&mut self, colour: TypedVec<f64>) {
+    pub fn fill(&mut self, colour: TypedVec) {
         (0..self.width * self.height).for_each(|n| self.pixels[n as usize] = colour);
     }
 
-    pub fn write_pixel(&mut self, x: usize, y: usize, colour: TypedVec<f64>) {
+    pub fn write_pixel(&mut self, x: usize, y: usize, colour: TypedVec) {
         if (x >= self.width) || (y >= self.height) {
             return;
         }
         self.pixels[(x + y * self.width) as usize] = colour;
     }
 
-    pub fn get(&self, x: usize, y: usize) -> Option<TypedVec<f64>> {
+    pub fn get(&self, x: usize, y: usize) -> Option<TypedVec> {
         Some(self.pixels[(x + y * self.width) as usize])
     }
 }

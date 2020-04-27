@@ -153,7 +153,7 @@ where
         }
     }
 
-    fn transpose(&self) -> Matrix<T> {
+    pub(crate) fn transpose(&self) -> Matrix<T> {
         let out = Self {
             rows: self.rows,
             cols: self.cols,
@@ -224,7 +224,7 @@ where
         !self.determinant().is_zero()
     }
 
-    fn inverse(&self) -> Result<Matrix<T>> {
+    pub(crate) fn inverse(&self) -> Result<Matrix<T>> {
         if !self.invertible() {
             return Err(anyhow!("matrix isn't invertible"));
         }
@@ -238,19 +238,6 @@ where
             }
         }
         Ok(s)
-    }
-
-    fn round(&self, factor: T) -> Matrix<T> {
-        Self {
-            rows: self.rows,
-            cols: self.cols,
-            data: {
-                self.data
-                    .iter()
-                    .map(move |&x| (x * factor).round() / factor)
-                    .collect()
-            },
-        }
     }
 
     fn rotate_x(distance: T) -> Matrix<T> {
@@ -284,6 +271,20 @@ where
         m.set(2, 2, T::one());
         m.set(3, 3, T::one());
         m
+    }
+
+    #[cfg(test)]
+    fn round(&self, factor: T) -> Matrix<T> {
+        Self {
+            rows: self.rows,
+            cols: self.cols,
+            data: {
+                self.data
+                    .iter()
+                    .map(move |&x| (x * factor).round() / factor)
+                    .collect()
+            },
+        }
     }
 }
 
@@ -328,7 +329,7 @@ where
     }
 }
 
-impl<T> Mul<TypedVec<T>> for Matrix<T>
+impl<T> Mul<TypedVec> for Matrix<T>
 where
     T: Mul<Output = T>
         + Sub<Output = T>
@@ -342,42 +343,68 @@ where
         + Display
         + Into<f64>,
 {
-    type Output = TypedVec<T>;
+    type Output = TypedVec;
 
-    fn mul(self, rhs: TypedVec<T>) -> Self::Output {
+    fn mul(self, rhs: TypedVec) -> Self::Output {
         assert!(self.cols == 4);
         let vec = vec![rhs.x, rhs.y, rhs.z, rhs.w];
         TypedVec {
-            x: {
-                let row = self.get_row(0).unwrap();
-                let mut iter = row.zip(&vec);
-                let (a, b) = iter.next().unwrap();
-                let mut acc = *a * *b;
-                for (a, b) in iter {
-                    acc += *a * *b;
-                }
-                acc
-            },
-            y: {
-                let row = self.get_row(1).unwrap();
-                let mut iter = row.zip(&vec);
-                let (a, b) = iter.next().unwrap();
-                let mut acc = *a * *b;
-                for (a, b) in iter {
-                    acc += *a * *b;
-                }
-                acc
-            },
-            z: {
-                let row = self.get_row(2).unwrap();
-                let mut iter = row.zip(&vec);
-                let (a, b) = iter.next().unwrap();
-                let mut acc = *a * *b;
-                for (a, b) in iter {
-                    acc += *a * *b;
-                }
-                acc
-            },
+            x: { mul_int(&self, &vec, 0) },
+            y: { mul_int(&self, &vec, 1) },
+            z: { mul_int(&self, &vec, 2) },
+            w: rhs.w,
+            is: rhs.is,
+        }
+    }
+}
+
+fn mul_int<T>(m: &Matrix<T>, vec: &Vec<f64>, row: usize) -> f64
+where
+    T: Mul<Output = T>
+        + Sub<Output = T>
+        + Neg<Output = T>
+        + Float
+        + AddAssign
+        + Copy
+        + Clone
+        + Default
+        + Debug
+        + Display
+        + Into<f64>,
+{
+    let row = m.get_row(row).unwrap();
+    let mut iter = row.zip(vec);
+    let (a, b) = iter.next().unwrap();
+    let mut acc: f64 = Into::<f64>::into(*a) * *b;
+    for (a, b) in iter {
+        acc += Into::<f64>::into(*a) * *b;
+    }
+    acc
+}
+
+impl<T> Mul<TypedVec> for &'_ Matrix<T>
+where
+    T: Mul<Output = T>
+        + Sub<Output = T>
+        + Neg<Output = T>
+        + Float
+        + AddAssign
+        + Copy
+        + Clone
+        + Default
+        + Debug
+        + Display
+        + Into<f64>,
+{
+    type Output = TypedVec;
+
+    fn mul(self, rhs: TypedVec) -> Self::Output {
+        assert!(self.cols == 4);
+        let vec = vec![rhs.x, rhs.y, rhs.z, rhs.w];
+        TypedVec {
+            x: { mul_int(&self, &vec, 0) },
+            y: { mul_int(&self, &vec, 1) },
+            z: { mul_int(&self, &vec, 2) },
             w: rhs.w,
             is: rhs.is,
         }

@@ -1,5 +1,4 @@
-use num::Float;
-use std::fmt::{Debug, Display};
+use std::fmt::Debug;
 use std::ops::{Add, Div, Mul, Neg, Sub};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -10,26 +9,20 @@ pub enum VecType {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub struct TypedVec<T>
-where
-    T: Mul<Output = T> + Float + Copy + Clone + Default + Debug + Display + Into<f64>,
-{
-    pub x: T,
-    pub y: T,
-    pub z: T,
-    pub(crate) w: T,
+pub struct TypedVec {
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
+    pub(crate) w: f64,
     pub(crate) is: VecType,
 }
 
-impl<T> std::fmt::Display for TypedVec<T>
-where
-    T: Mul<Output = T> + Float + Copy + Clone + Default + Debug + PartialOrd + Display + Into<f64>,
-{
+impl std::fmt::Display for TypedVec {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        fn clamp<T: PartialOrd + Float + Into<f64>>(val: T) -> f64 {
-            if val < T::zero() {
+        fn clamp(val: f64) -> f64 {
+            if val < 0f64 {
                 0.0
-            } else if val > T::one() {
+            } else if val > 1f64 {
                 1.0
             } else {
                 val.into()
@@ -45,34 +38,31 @@ where
         )
     }
 }
-impl<T> TypedVec<T>
-where
-    T: Mul<Output = T> + Float + Copy + Clone + Default + Debug + Display + Into<f64>,
-{
-    pub fn point(x: T, y: T, z: T) -> Self {
+impl TypedVec {
+    pub fn point(x: f64, y: f64, z: f64) -> Self {
         Self {
             x,
             y,
             z,
-            w: T::one(),
+            w: 1f64,
             is: VecType::Point,
         }
     }
-    pub fn vector(x: T, y: T, z: T) -> Self {
+    pub fn vector(x: f64, y: f64, z: f64) -> Self {
         Self {
             x,
             y,
             z,
-            w: T::zero(),
+            w: 0f64,
             is: VecType::Vector,
         }
     }
-    pub fn colour(red: T, green: T, blue: T) -> Self {
+    pub fn colour(red: f64, green: f64, blue: f64) -> Self {
         Self {
             x: red,
             y: green,
             z: blue,
-            w: T::zero(),
+            w: 0f64,
             is: VecType::Colour,
         }
     }
@@ -89,7 +79,7 @@ where
         self.is == VecType::Colour
     }
 
-    pub fn magnitude(&self) -> T {
+    pub fn magnitude(&self) -> f64 {
         let val = self.x.powi(2) + self.y.powi(2) + self.z.powi(2);
         val.sqrt()
     }
@@ -105,7 +95,12 @@ where
         }
     }
 
-    pub fn dot_product(&self, rhs: Self) -> T {
+    pub fn reflect(&self, rhs: Self) -> Self {
+        assert!(self.is_vector() && rhs.is_vector());
+        *self - rhs * 2f64 * self.dot_product(rhs)
+    }
+
+    pub fn dot_product(&self, rhs: Self) -> f64 {
         assert!(self.is_vector() && rhs.is_vector());
         self.x * rhs.x + self.y * rhs.y + self.z * rhs.z
     }
@@ -119,7 +114,8 @@ where
         )
     }
 
-    pub(crate) fn round(&self, factor: T) -> Self {
+    #[cfg(test)]
+    pub(crate) fn round(&self, factor: f64) -> Self {
         Self {
             is: self.is,
             w: self.w,
@@ -130,19 +126,16 @@ where
     }
 }
 
-impl<T> Add for TypedVec<T>
-where
-    T: Mul<Output = T> + Float + Copy + Clone + Default + Debug + Display + Into<f64>,
-{
+impl Add for TypedVec {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
         let (is, w) = if self.is_point() && rhs.is_point() {
             panic!("can't add two points");
         } else if (self.is_point() && rhs.is_vector()) || (self.is_vector() && rhs.is_point()) {
-            (VecType::Point, T::one())
+            (VecType::Point, 1f64)
         } else {
-            (VecType::Vector, T::zero())
+            (VecType::Vector, 0f64)
         };
 
         Self {
@@ -155,19 +148,16 @@ where
     }
 }
 
-impl<T> Sub for TypedVec<T>
-where
-    T: Mul<Output = T> + Float + Copy + Clone + Default + Debug + Display + Into<f64>,
-{
+impl Sub for TypedVec {
     type Output = Self;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        let (is, w) = if self.is_point() && rhs.is_point() {
-            panic!("can't subtract two points");
-        } else if (self.is_point() && rhs.is_vector()) || (self.is_vector() && rhs.is_point()) {
-            (VecType::Point, T::one())
+        let (is, w) = if self.is_point() && rhs.is_vector() {
+            (VecType::Point, 1f64)
+        } else if self.is_vector() && rhs.is_point() {
+            panic!("Subtracting a point from a vector makes no sense");
         } else {
-            (VecType::Vector, T::zero())
+            (VecType::Vector, 0f64)
         };
 
         Self {
@@ -180,10 +170,7 @@ where
     }
 }
 
-impl<T> Neg for TypedVec<T>
-where
-    T: Mul<Output = T> + Float + Copy + Clone + Default + Debug + Display + Into<f64>,
-{
+impl Neg for TypedVec {
     type Output = Self;
 
     fn neg(self) -> Self::Output {
@@ -197,13 +184,10 @@ where
     }
 }
 
-impl<T> Mul<T> for TypedVec<T>
-where
-    T: Mul<Output = T> + Float + Copy + Clone + Default + Debug + Display + Into<f64>,
-{
+impl Mul<f64> for TypedVec {
     type Output = Self;
 
-    fn mul(self, rhs: T) -> Self::Output {
+    fn mul(self, rhs: f64) -> Self::Output {
         Self {
             x: self.x * rhs,
             y: self.y * rhs,
@@ -214,13 +198,10 @@ where
     }
 }
 
-impl<T> Div<T> for TypedVec<T>
-where
-    T: Mul<Output = T> + Float + Copy + Clone + Default + Debug + Display + Into<f64>,
-{
+impl Div<f64> for TypedVec {
     type Output = Self;
 
-    fn div(self, rhs: T) -> Self::Output {
+    fn div(self, rhs: f64) -> Self::Output {
         Self {
             x: self.x / rhs,
             y: self.y / rhs,
@@ -287,7 +268,7 @@ mod tests {
     }
 
     #[test]
-    fn test_sub() {
+    fn test_sub_point_vec() {
         let t = TypedVec::point(3.0, 2.0, 1.0) - TypedVec::vector(5.0, 6.0, 7.0);
         assert_eq!(
             t,
@@ -300,6 +281,38 @@ mod tests {
             }
         );
         assert_eq!(t.is_point(), true)
+    }
+
+    #[test]
+    fn test_sub_point_point() {
+        let t = TypedVec::point(3.0, 2.0, 1.0) - TypedVec::point(5.0, 6.0, 7.0);
+        assert_eq!(
+            t,
+            TypedVec {
+                x: -2.0,
+                y: -4.0,
+                z: -6.0,
+                w: 0f64,
+                is: VecType::Vector,
+            }
+        );
+        assert_eq!(t.is_vector(), true)
+    }
+
+    #[test]
+    fn test_sub_vec_vec() {
+        let t = TypedVec::vector(3.0, 2.0, 1.0) - TypedVec::vector(5.0, 6.0, 7.0);
+        assert_eq!(
+            t,
+            TypedVec {
+                x: -2.0,
+                y: -4.0,
+                z: -6.0,
+                w: 0f64,
+                is: VecType::Vector,
+            }
+        );
+        assert_eq!(t.is_vector(), true)
     }
 
     #[test]
@@ -334,7 +347,7 @@ mod tests {
     #[test]
     fn test_normalize_magnitude() {
         let v = TypedVec::vector(1.0, 2.0, 3.0).normalize();
-        let m: f32 = v.magnitude();
+        let m = v.magnitude();
         assert_eq!(m.round(), 1.0)
     }
 
@@ -342,7 +355,7 @@ mod tests {
     fn test_dot_product() {
         let v = TypedVec::vector(1.0, 2.0, 3.0);
         let r = TypedVec::vector(2.0, 3.0, 4.0);
-        let m: f32 = v.dot_product(r);
+        let m = v.dot_product(r);
         assert_eq!(m.round(), 20.0)
     }
 
@@ -356,6 +369,24 @@ mod tests {
         );
         assert_eq!(r.cross_product(v.clone()), TypedVec::vector(1.0, -2.0, 1.0));
     }
+
+    #[test]
+    fn test_reflect_45() {
+        let v = TypedVec::vector(1.0, -1.0, 0.0);
+        let n = TypedVec::vector(0.0, 1.0, 0.0);
+        let r = TypedVec::vector(1.0, 1.0, 0.0);
+        assert_eq!(v.reflect(n), r)
+    }
+
+    #[test]
+    fn test_reflect_slant() {
+        let v = TypedVec::vector(0.0, -1.0, 0.0);
+        let s = 2f64.sqrt() / 2f64;
+        let n = TypedVec::vector(s, s, 0.0);
+        let r = TypedVec::vector(1.0, 0.0, 0.0);
+        assert_eq!(v.reflect(n).round(1000f64), r)
+    }
+
     #[test]
     fn test_display() {
         assert_eq!(format!("{}", TypedVec::colour(1.0, 0.0, 0.0)), "255 0 0");

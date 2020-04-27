@@ -1,26 +1,29 @@
 use ray_trace_challenge::canvas::Canvas;
+use ray_trace_challenge::intersection::Intersections;
 use ray_trace_challenge::matrix::{Axis, Matrix};
+use ray_trace_challenge::ray::Ray;
+use ray_trace_challenge::sphere::{Hittable, Sphere};
 use ray_trace_challenge::vec3::TypedVec;
 use std::fs::OpenOptions;
 use std::io::Write;
 
 #[derive(Debug, Clone)]
 struct Projectile {
-    velocity: TypedVec<f64>,
-    position: TypedVec<f64>,
+    velocity: TypedVec,
+    position: TypedVec,
 }
 
 #[derive(Debug, Clone)]
 struct Environment {
-    gravity: TypedVec<f64>,
-    wind: TypedVec<f64>,
+    gravity: TypedVec,
+    wind: TypedVec,
 }
 
 fn main() {
     fn tick(env: &Environment, proj: Projectile, canvas: &mut Canvas) -> Projectile {
         let position = proj.position + proj.velocity;
         let velocity = proj.velocity + env.gravity + env.wind;
-        let colour = TypedVec::colour(1.0, 0.0, 0.0);
+        let colour = TypedVec::colour(1f64, 0.0, 0.0);
         let y = if position.y.round() as usize > canvas.height {
             canvas.height
         } else {
@@ -33,32 +36,54 @@ fn main() {
         Projectile { velocity, position }
     }
 
-    let mut canvas = Canvas::new(50, 50);
-    let colour = TypedVec::colour(1.0, 0.0, 0.0);
+    let mut canvas = Canvas::new(100, 100);
+    let colour = TypedVec::colour(1f64, 0f64, 0f64);
 
-    // let mut p = Projectile {
-    //     position: TypedVec::point(0.0, 1.0, 0.0),
-    //     velocity: TypedVec::vector(1.0, 1.8, 0.0).normalize() * 11.25,
-    // };
-    // let e = Environment {
-    //     gravity: TypedVec::vector(0.0, -0.1, 0.0),
-    //     wind: TypedVec::vector(-0.01, 0.0, 0.0),
-    // };
-    //
-    let p = TypedVec::point(0f64, 0f64, 16f64);
-    let centre = TypedVec::vector(25f64, 25f64, 25f64);
-    for i in 0..12 {
-        let r = Matrix::rotation(Axis::Y, i as f64 * (std::f64::consts::PI / 6f64));
-        let h = r * p;
-        let centred = h + centre;
-        dbg!(&centred);
-        canvas.write_pixel(
-            centred.x.round() as usize,
-            centred.z.round() as usize,
-            colour,
-        );
+    let ray_origin = TypedVec::point(0f64, 0f64, -5f64);
+    let wall_size = 7f64;
+    let pixel_size = wall_size / 100f64;
+    let half = wall_size / 2.0;
+    let mut s = Sphere::new();
+    let t =
+        Matrix::shearing(1f64, 0f64, 0f64, 0f64, 0f64, 0f64) * Matrix::scaling(0.5f64, 1f64, 1f64);
+    s.set_transform(t);
+
+    for y in 0..100 {
+        let world_y = half - pixel_size * y as f64;
+        for x in 0..100 {
+            let world_x = -half + pixel_size * x as f64;
+            let pos = TypedVec::point(world_x, world_y, 10f64);
+            let r = Ray::new(ray_origin, (pos - ray_origin).normalize());
+            let xs = s.intersect(r);
+            let mut xs = Intersections::from_iter(xs);
+            if xs.hit().is_some() {
+                canvas.write_pixel(x as usize, y as usize, colour);
+            }
+        }
     }
-
+    // // let mut p = Projectile {
+    // //     position: TypedVec::point(0.0, 1.0, 0.0),
+    // //     velocity: TypedVec::vector(1.0, 1.8, 0.0).normalize() * 11.25,
+    // // };
+    // // let e = Environment {
+    // //     gravity: TypedVec::vector(0.0, -0.1, 0.0),
+    // //     wind: TypedVec::vector(-0.01, 0.0, 0.0),
+    // // };
+    // //
+    // let p = TypedVec::point(0f64, 0f64, 16f64);
+    // let centre = TypedVec::vector(25f64, 25f64, 25f64);
+    // for i in 0..12 {
+    //     let r = Matrix::rotation(Axis::Y, i as f64 * (std::f64::consts::PI / 6f64));
+    //     let h = r * p;
+    //     let centred = h + centre;
+    //     dbg!(&centred);
+    //     canvas.write_pixel(
+    //         centred.x.round() as usize,
+    //         centred.z.round() as usize,
+    //         colour,
+    //     );
+    // }
+    //
     // let mut ticks = 0;
     // while p.position.y > 0.0 {
     //     p = tick(&e, p, &mut canvas);
