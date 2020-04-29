@@ -8,8 +8,8 @@ pub struct Intersection<'a, H>
 where
     H: Hittable + PartialEq + PartialOrd + Clone + Debug,
 {
-    pub(crate) t: f64,
-    pub(crate) obj: &'a H,
+    pub t: f64,
+    pub obj: &'a H,
 }
 
 impl<'a, H> Intersection<'a, H>

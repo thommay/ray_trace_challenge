@@ -3,8 +3,8 @@ use crate::vec3::TypedVec;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Ray {
-    pub(crate) origin: TypedVec,
-    pub(crate) direction: TypedVec,
+    pub origin: TypedVec,
+    pub direction: TypedVec,
 }
 
 impl Ray {
@@ -12,7 +12,7 @@ impl Ray {
         Ray { origin, direction }
     }
 
-    fn position(&self, time: f64) -> TypedVec {
+    pub fn position(&self, time: f64) -> TypedVec {
         self.origin + self.direction * time
     }
 

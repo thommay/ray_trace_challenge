@@ -1,4 +1,5 @@
 use crate::intersection::Intersection;
+use crate::material::Material;
 use crate::matrix::Matrix;
 use crate::ray::Ray;
 use crate::sphere;
@@ -9,15 +10,23 @@ use std::fmt::Debug;
 #[derive(Clone, Debug, PartialOrd)]
 pub struct Sphere {
     pub transform: Option<Matrix<f64>>,
+    pub material: Material,
 }
 
 impl Sphere {
     pub fn new() -> Self {
-        Self { transform: None }
+        Self {
+            transform: None,
+            material: Material::default(),
+        }
     }
 
     pub fn set_transform(&mut self, transform: Matrix<f64>) {
         self.transform = Some(transform);
+    }
+
+    pub fn set_material(&mut self, material: Material) {
+        self.material = material;
     }
 
     pub fn normal_at(&self, p: TypedVec) -> Result<TypedVec> {

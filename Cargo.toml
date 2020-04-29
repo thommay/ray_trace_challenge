@@ -13,6 +13,7 @@ harness = false # Allows Cucumber to print output instead of libtest
 [dependencies]
 num = "0.2"
 anyhow = "1.0"
+lazy_static = "1.4.0"
 
 [dev-dependencies]
 cucumber = { package = "cucumber_rust", version = "^0.6.0" }

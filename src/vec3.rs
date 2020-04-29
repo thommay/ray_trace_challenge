@@ -1,14 +1,14 @@
 use std::fmt::Debug;
 use std::ops::{Add, Div, Mul, Neg, Sub};
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
 pub enum VecType {
     Vector,
     Point,
     Colour,
 }
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
 pub struct TypedVec {
     pub x: f64,
     pub y: f64,
@@ -38,6 +38,7 @@ impl std::fmt::Display for TypedVec {
         )
     }
 }
+
 impl TypedVec {
     pub fn point(x: f64, y: f64, z: f64) -> Self {
         Self {
@@ -97,7 +98,7 @@ impl TypedVec {
 
     pub fn reflect(&self, rhs: Self) -> Self {
         assert!(self.is_vector() && rhs.is_vector());
-        *self - rhs * 2f64 * self.dot_product(rhs)
+        *self - (rhs * 2f64 * self.dot_product(rhs))
     }
 
     pub fn dot_product(&self, rhs: Self) -> f64 {
@@ -192,6 +193,21 @@ impl Mul<f64> for TypedVec {
             x: self.x * rhs,
             y: self.y * rhs,
             z: self.z * rhs,
+            w: self.w,
+            is: self.is,
+        }
+    }
+}
+
+impl Mul<TypedVec> for TypedVec {
+    type Output = TypedVec;
+
+    fn mul(self, rhs: TypedVec) -> Self::Output {
+        assert!(self.is_colour() && rhs.is_colour());
+        Self::Output {
+            x: { self.x * rhs.x },
+            y: { self.y * rhs.y },
+            z: { self.z * rhs.z },
             w: self.w,
             is: self.is,
         }

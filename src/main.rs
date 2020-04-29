@@ -1,6 +1,9 @@
 use ray_trace_challenge::canvas::Canvas;
+use ray_trace_challenge::colour::{Colour, WHITE};
 use ray_trace_challenge::intersection::Intersections;
-use ray_trace_challenge::matrix::{Axis, Matrix};
+use ray_trace_challenge::lighting;
+use ray_trace_challenge::material::Material;
+use ray_trace_challenge::matrix::Matrix;
 use ray_trace_challenge::ray::Ray;
 use ray_trace_challenge::sphere::{Hittable, Sphere};
 use ray_trace_challenge::vec3::TypedVec;
@@ -23,7 +26,7 @@ fn main() {
     fn tick(env: &Environment, proj: Projectile, canvas: &mut Canvas) -> Projectile {
         let position = proj.position + proj.velocity;
         let velocity = proj.velocity + env.gravity + env.wind;
-        let colour = TypedVec::colour(1f64, 0.0, 0.0);
+        let colour = Colour::new(1f64, 0.0, 0.0);
         let y = if position.y.round() as usize > canvas.height {
             canvas.height
         } else {
@@ -37,17 +40,21 @@ fn main() {
     }
 
     let mut canvas = Canvas::new(100, 100);
-    let colour = TypedVec::colour(1f64, 0f64, 0f64);
 
     let ray_origin = TypedVec::point(0f64, 0f64, -5f64);
     let wall_size = 7f64;
     let pixel_size = wall_size / 100f64;
     let half = wall_size / 2.0;
     let mut s = Sphere::new();
-    let t =
-        Matrix::shearing(1f64, 0f64, 0f64, 0f64, 0f64, 0f64) * Matrix::scaling(0.5f64, 1f64, 1f64);
-    s.set_transform(t);
+    // let t =
+    //     Matrix::shearing(1f64, 0f64, 0f64, 0f64, 0f64, 0f64) * Matrix::scaling(0.5f64, 1f64, 1f64);
+    // s.set_transform(t);
+    s.set_material(Material {
+        colour: Colour::new(1f64, 0.2, 1f64),
+        ..Default::default()
+    });
 
+    let l = lighting::Point::new(TypedVec::point(-10f64, 10f64, -10f64), *WHITE);
     for y in 0..100 {
         let world_y = half - pixel_size * y as f64;
         for x in 0..100 {
@@ -56,7 +63,11 @@ fn main() {
             let r = Ray::new(ray_origin, (pos - ray_origin).normalize());
             let xs = s.intersect(r);
             let mut xs = Intersections::from_iter(xs);
-            if xs.hit().is_some() {
+            if let Some(hit) = xs.hit() {
+                let point = r.position(hit.t);
+                let n = hit.obj.normal_at(point).unwrap();
+                let eye = -r.direction;
+                let colour = hit.obj.material.lighting(l, point, eye, n);
                 canvas.write_pixel(x as usize, y as usize, colour);
             }
         }
