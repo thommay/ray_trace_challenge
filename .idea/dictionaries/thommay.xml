@@ -2,6 +2,9 @@
   <dictionary name="thommay">
     <words>
       <w>cofactor</w>
+      <w>eyev</w>
+      <w>normalv</w>
+      <w>precompute</w>
       <w>submatrix</w>
     </words>
   </dictionary>

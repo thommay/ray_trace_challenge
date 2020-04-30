@@ -1,7 +1,7 @@
 use crate::colour::Colour;
 use crate::vec3::TypedVec;
 
-#[derive(Copy, Clone, PartialEq, Debug)]
+#[derive(Copy, Clone, PartialEq, Debug, PartialOrd)]
 pub struct Point {
     pub(crate) intensity: Colour,
     pub(crate) position: TypedVec,

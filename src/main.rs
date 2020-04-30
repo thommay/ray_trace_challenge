@@ -3,7 +3,6 @@ use ray_trace_challenge::colour::{Colour, WHITE};
 use ray_trace_challenge::intersection::Intersections;
 use ray_trace_challenge::lighting;
 use ray_trace_challenge::material::Material;
-use ray_trace_challenge::matrix::Matrix;
 use ray_trace_challenge::ray::Ray;
 use ray_trace_challenge::sphere::{Hittable, Sphere};
 use ray_trace_challenge::vec3::TypedVec;

@@ -2,7 +2,6 @@ use crate::intersection::Intersection;
 use crate::material::Material;
 use crate::matrix::Matrix;
 use crate::ray::Ray;
-use crate::sphere;
 use crate::vec3::TypedVec;
 use anyhow::Result;
 use std::fmt::Debug;
@@ -13,6 +12,14 @@ pub struct Sphere {
     pub material: Material,
 }
 
+impl Default for Sphere {
+    fn default() -> Self {
+        Self {
+            transform: None,
+            material: Material::default(),
+        }
+    }
+}
 impl Sphere {
     pub fn new() -> Self {
         Self {
@@ -28,19 +35,6 @@ impl Sphere {
     pub fn set_material(&mut self, material: Material) {
         self.material = material;
     }
-
-    pub fn normal_at(&self, p: TypedVec) -> Result<TypedVec> {
-        let c = TypedVec::point(0f64, 0f64, 0f64);
-        if let Some(transform) = &self.transform {
-            let object_point = transform.inverse()? * p;
-            let object_normal = object_point - c;
-            let mut world_normal = transform.inverse()?.transpose() * object_normal;
-            world_normal.w = 0f64;
-            Ok(world_normal.normalize())
-        } else {
-            Ok((p - c).normalize())
-        }
-    }
 }
 
 impl PartialEq for Sphere {
@@ -53,7 +47,9 @@ pub trait Hittable {
     type Output;
     fn intersect(&self, ray: Ray) -> Vec<Intersection<Self::Output>>
     where
-        <Self as sphere::Hittable>::Output: Hittable + PartialEq + PartialOrd + Clone + Debug;
+        <Self as Hittable>::Output: Hittable + PartialOrd + PartialEq + Debug + Clone;
+    fn normal_at(&self, p: TypedVec) -> Result<TypedVec>;
+    fn material(&self) -> Material;
 }
 
 impl Hittable for Sphere {
@@ -77,6 +73,22 @@ impl Hittable for Sphere {
         ret.push(Intersection::new((-b - d.sqrt()) / (2.0 * a), &self));
         ret.push(Intersection::new((-b + d.sqrt()) / (2.0 * a), &self));
         ret
+    }
+
+    fn normal_at(&self, p: TypedVec) -> Result<TypedVec> {
+        let c = TypedVec::point(0f64, 0f64, 0f64);
+        if let Some(transform) = &self.transform {
+            let object_point = transform.inverse()? * p;
+            let object_normal = object_point - c;
+            let mut world_normal = transform.inverse()?.transpose() * object_normal;
+            world_normal.w = 0f64;
+            Ok(world_normal.normalize())
+        } else {
+            Ok((p - c).normalize())
+        }
+    }
+    fn material(&self) -> Material {
+        self.material.clone()
     }
 }
 

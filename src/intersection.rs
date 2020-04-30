@@ -1,7 +1,22 @@
+use crate::ray::Ray;
 use crate::sphere::Hittable;
+use crate::vec3::TypedVec;
 use std::cmp::Ordering;
 use std::fmt::Debug;
 use std::ops::Index;
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct PreComp<'a, H>
+where
+    H: Hittable + PartialEq + PartialOrd + Clone + Debug,
+{
+    pub(crate) eyev: TypedVec,
+    inside: bool,
+    pub(crate) normalv: TypedVec,
+    pub(crate) obj: &'a H,
+    pub(crate) point: TypedVec,
+    t: f64,
+}
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Intersection<'a, H>
@@ -18,6 +33,25 @@ where
 {
     pub fn new(t: f64, obj: &'a H) -> Self {
         Intersection { t, obj }
+    }
+    pub fn precompute(&self, ray: Ray) -> PreComp<H> {
+        let point = ray.position(self.t);
+        let mut normalv = self.obj.normal_at(point).unwrap();
+        let eyev = -ray.direction;
+        let inside = if normalv.dot_product(eyev) < 0.0 {
+            normalv = -normalv;
+            true
+        } else {
+            false
+        };
+        PreComp {
+            t: self.t,
+            obj: self.obj,
+            point,
+            eyev,
+            normalv,
+            inside,
+        }
     }
 }
 
@@ -114,7 +148,9 @@ where
 #[cfg(test)]
 mod tests {
     use crate::intersection::{Intersection, Intersections};
+    use crate::ray::Ray;
     use crate::sphere::Sphere;
+    use crate::vec3::TypedVec;
 
     #[test]
     fn test_intersections() {
@@ -163,5 +199,39 @@ mod tests {
         let i4 = Intersection::new(2.0, &s);
         let mut xs = Intersections::from_iter(vec![i1.clone(), i2.clone(), i3.clone(), i4.clone()]);
         assert_eq!(xs.hit(), Some(&i4))
+    }
+
+    #[test]
+    fn test_precompute() {
+        let r = Ray::new(
+            TypedVec::point(0f64, 0f64, -5f64),
+            TypedVec::vector(0f64, 0f64, 1f64),
+        );
+        let s = Sphere::new();
+        let i = Intersection::new(4.0, &s);
+        let comps = i.precompute(r);
+        assert_eq!(comps.t, i.t);
+        assert_eq!(comps.obj, i.obj);
+        assert_eq!(comps.point, TypedVec::point(0f64, 0f64, -1f64));
+        assert_eq!(comps.eyev, TypedVec::vector(0f64, 0f64, -1f64));
+        assert_eq!(comps.normalv, TypedVec::vector(0f64, 0f64, -1f64));
+        assert!(!comps.inside)
+    }
+
+    #[test]
+    fn test_precompute_inside() {
+        let r = Ray::new(
+            TypedVec::point(0f64, 0f64, 0f64),
+            TypedVec::vector(0f64, 0f64, 1f64),
+        );
+        let s = Sphere::new();
+        let i = Intersection::new(1.0, &s);
+        let comps = i.precompute(r);
+        assert_eq!(comps.t, i.t);
+        assert_eq!(comps.obj, i.obj);
+        assert_eq!(comps.point, TypedVec::point(0f64, 0f64, 1f64));
+        assert_eq!(comps.eyev, TypedVec::vector(0f64, 0f64, -1f64));
+        assert_eq!(comps.normalv, TypedVec::vector(0f64, 0f64, -1f64));
+        assert!(comps.inside)
     }
 }
