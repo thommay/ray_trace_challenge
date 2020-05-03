@@ -1,7 +1,6 @@
 use crate::canvas::Canvas;
 use crate::matrix::Matrix;
 use crate::ray::Ray;
-use crate::sphere::Sphere;
 use crate::vec3::TypedVec;
 use crate::world::World;
 use std::f64::consts::PI;
@@ -51,7 +50,7 @@ impl Camera {
         Ray::new(origin, direction)
     }
 
-    pub fn render(&self, world: World<Sphere>) -> Canvas {
+    pub fn render(&self, world: World) -> Canvas {
         let mut image = Canvas::new(self.hsize as usize, self.vsize as usize);
         for y in 0..self.vsize as usize {
             for x in 0..self.hsize as usize {
@@ -100,9 +99,9 @@ pub fn view_transform(from: TypedVec, to: TypedVec, up: TypedVec) -> Matrix<f64>
 mod test {
     use crate::camera::{view_transform, Camera};
     use crate::colour::Colour;
+    use crate::default_world;
     use crate::matrix::{Axis, Matrix};
     use crate::vec3::TypedVec;
-    use crate::world;
     use std::f64::consts::PI;
 
     #[test]
@@ -203,7 +202,7 @@ mod test {
 
     #[test]
     fn render_a_world() {
-        let w = world::test::default_world();
+        default_world!(w, s1, s2);
         let mut c = Camera::new(11f64, 11f64, PI / 2f64);
         c.transform = view_transform(
             TypedVec::point(0f64, 0f64, -5f64),
@@ -213,7 +212,7 @@ mod test {
         let image = c.render(w);
         assert_eq!(
             image.get(5, 5).unwrap().round(100000f64),
-            Colour::new(0.38066, 0.47583, 0.2855)
+            Colour::new(0.38066, 0.47582, 0.28549)
         )
     }
 }

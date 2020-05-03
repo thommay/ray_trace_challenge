@@ -1,42 +1,34 @@
 use crate::ray::Ray;
-use crate::sphere::Hittable;
+use crate::sphere::HittableImpl;
 use crate::vec3::TypedVec;
 use std::cmp::Ordering;
 use std::fmt::Debug;
 use std::ops::Index;
 
 const EPSILON: f64 = 0.0001;
+
 #[derive(Clone, Debug, PartialEq)]
-pub struct PreComp<'a, H>
-where
-    H: Hittable + PartialEq + PartialOrd + Clone + Debug,
-{
+pub struct PreComp<'a> {
     pub(crate) eyev: TypedVec,
     inside: bool,
     pub(crate) normalv: TypedVec,
-    pub(crate) obj: &'a H,
+    pub(crate) obj: &'a dyn HittableImpl,
     pub(crate) point: TypedVec,
     pub(crate) over_point: TypedVec,
     t: f64,
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct Intersection<'a, H>
-where
-    H: Hittable + PartialEq + PartialOrd + Clone + Debug,
-{
+pub struct Intersection<'a> {
     pub t: f64,
-    pub obj: &'a H,
+    pub obj: &'a dyn HittableImpl,
 }
 
-impl<'a, H> Intersection<'a, H>
-where
-    H: Hittable + PartialEq + PartialOrd + Clone + Debug,
-{
-    pub fn new(t: f64, obj: &'a H) -> Self {
+impl<'a> Intersection<'a> {
+    pub fn new(t: f64, obj: &'a dyn HittableImpl) -> Self {
         Intersection { t, obj }
     }
-    pub fn precompute(&self, ray: Ray) -> PreComp<H> {
+    pub fn precompute(&self, ray: Ray) -> PreComp {
         let point = ray.position(self.t);
         let mut normalv = self.obj.normal_at(point).unwrap();
         let eyev = -ray.direction;
@@ -59,29 +51,21 @@ where
     }
 }
 
-impl<'a, H> PartialOrd for Intersection<'a, H>
-where
-    H: Hittable + PartialEq + PartialOrd + Clone + Debug,
-{
+impl<'a> PartialOrd for Intersection<'a> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         self.t.partial_cmp(&other.t)
     }
 }
 
 #[derive(Debug)]
-pub struct Intersections<'a, H>(Vec<Intersection<'a, H>>)
-where
-    H: Hittable + PartialEq + PartialOrd + Clone + Debug;
+pub struct Intersections<'a>(Vec<Intersection<'a>>);
 
-impl<'a, H> Intersections<'a, H>
-where
-    H: Hittable + PartialEq + PartialOrd + Clone + Debug,
-{
+impl<'a> Intersections<'a> {
     pub fn new() -> Self {
         Intersections(Vec::new())
     }
 
-    pub fn from_iter<T: IntoIterator<Item = Intersection<'a, H>>>(iter: T) -> Self {
+    pub fn from_iter<T: IntoIterator<Item = Intersection<'a>>>(iter: T) -> Self {
         let mut c = Self::new();
         for i in iter {
             c.push(i);
@@ -89,45 +73,36 @@ where
         c
     }
 
-    pub fn push(&mut self, elem: Intersection<'a, H>) {
+    pub fn push(&mut self, elem: Intersection<'a>) {
         self.0.push(elem);
     }
     pub fn len(&self) -> usize {
         self.0.len()
     }
 
-    pub fn hit(&mut self) -> Option<&Intersection<H>> {
+    pub fn hit(&mut self) -> Option<&Intersection> {
         self.0.sort_by(|a, b| a.partial_cmp(b).unwrap());
 
         self.0.iter().filter(|&x| x.t > 0f64).take(1).next()
     }
 }
 
-impl<'a, H> IntoIterator for Intersections<'a, H>
-where
-    H: Hittable + PartialEq + PartialOrd + Clone + Debug,
-{
-    type Item = Intersection<'a, H>;
-    type IntoIter = IntersectionsIterator<'a, H>;
+impl<'a> IntoIterator for Intersections<'a> {
+    type Item = Intersection<'a>;
+    type IntoIter = IntersectionsIterator<'a>;
 
     fn into_iter(self) -> Self::IntoIter {
         IntersectionsIterator { i: self, pos: 0 }
     }
 }
 
-pub struct IntersectionsIterator<'a, H>
-where
-    H: Hittable + PartialEq + PartialOrd + Clone + Debug,
-{
-    i: Intersections<'a, H>,
+pub struct IntersectionsIterator<'a> {
+    i: Intersections<'a>,
     pos: usize,
 }
 
-impl<'a, H> Iterator for IntersectionsIterator<'a, H>
-where
-    H: Hittable + PartialEq + PartialOrd + Clone + Debug,
-{
-    type Item = Intersection<'a, H>;
+impl<'a> Iterator for IntersectionsIterator<'a> {
+    type Item = Intersection<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.pos += 1;
@@ -139,11 +114,8 @@ where
     }
 }
 
-impl<'a, H> Index<usize> for Intersections<'a, H>
-where
-    H: Hittable + PartialEq + PartialOrd + Clone + Debug,
-{
-    type Output = Intersection<'a, H>;
+impl<'a> Index<usize> for Intersections<'a> {
+    type Output = Intersection<'a>;
     fn index(&self, index: usize) -> &Self::Output {
         &self.0[index]
     }

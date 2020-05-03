@@ -4,6 +4,7 @@ use crate::matrix::Matrix;
 use crate::ray::Ray;
 use crate::vec3::TypedVec;
 use anyhow::Result;
+use std::cmp::Ordering;
 use std::fmt::Debug;
 
 #[derive(Clone, Debug, PartialOrd, PartialEq)]
@@ -35,18 +36,30 @@ impl Sphere {
 }
 
 pub trait Hittable {
-    type Output;
-    fn intersect(&self, ray: Ray) -> Vec<Intersection<Self::Output>>
-    where
-        <Self as Hittable>::Output: Hittable + PartialOrd + PartialEq + Debug + Clone;
+    fn intersect(&self, ray: Ray) -> Vec<Intersection>;
     fn normal_at(&self, p: TypedVec) -> Result<TypedVec>;
     fn material(&self) -> &Material;
     fn transform(&self) -> &Option<Matrix<f64>>;
 }
 
+impl<'a, 'b> PartialEq<dyn HittableImpl + 'b> for dyn HittableImpl + 'a {
+    fn eq(&self, other: &dyn HittableImpl) -> bool {
+        self.material() == other.material() && self.transform() == other.transform()
+    }
+}
+
+impl<'a, 'b> PartialOrd<dyn HittableImpl + 'b> for dyn HittableImpl + 'a {
+    fn partial_cmp(&self, other: &dyn HittableImpl) -> Option<Ordering> {
+        self.material().partial_cmp(other.material())
+    }
+}
+
+pub trait HittableImpl: Hittable + Debug {}
+impl HittableImpl for Sphere {}
+impl HittableImpl for &Sphere {}
+
 impl Hittable for Sphere {
-    type Output = Sphere;
-    fn intersect<'a>(&self, ray: Ray) -> Vec<Intersection<Self::Output>> {
+    fn intersect(&self, ray: Ray) -> Vec<Intersection> {
         let mut ret = Vec::new();
         let ray = if let Some(transform) = &self.transform {
             let t = transform.inverse().unwrap();
@@ -62,8 +75,52 @@ impl Hittable for Sphere {
         if d < 0.0 {
             return ret;
         }
-        ret.push(Intersection::new((-b - d.sqrt()) / (2.0 * a), &self));
-        ret.push(Intersection::new((-b + d.sqrt()) / (2.0 * a), &self));
+        ret.push(Intersection::new((-b - d.sqrt()) / (2.0 * a), self));
+        ret.push(Intersection::new((-b + d.sqrt()) / (2.0 * a), self));
+        ret
+    }
+
+    fn normal_at(&self, p: TypedVec) -> Result<TypedVec> {
+        let c = TypedVec::point(0f64, 0f64, 0f64);
+        if let Some(transform) = &self.transform {
+            let object_point = transform.inverse()? * p;
+            let object_normal = object_point - c;
+            let mut world_normal = transform.inverse()?.transpose() * object_normal;
+            world_normal.w = 0f64;
+            Ok(world_normal.normalize())
+        } else {
+            Ok((p - c).normalize())
+        }
+    }
+
+    fn material(&self) -> &Material {
+        &self.material
+    }
+
+    fn transform(&self) -> &Option<Matrix<f64>> {
+        &self.transform
+    }
+}
+
+impl Hittable for &Sphere {
+    fn intersect<'a>(&self, ray: Ray) -> Vec<Intersection> {
+        let mut ret = Vec::new();
+        let ray = if let Some(transform) = &self.transform {
+            let t = transform.inverse().unwrap();
+            ray.transform(&t)
+        } else {
+            ray
+        };
+        let sphere_to_ray = ray.origin - TypedVec::point(0.0, 0.0, 0.0);
+        let a: f64 = ray.direction.dot_product(ray.direction);
+        let b: f64 = 2.0 * ray.direction.dot_product(sphere_to_ray);
+        let c: f64 = sphere_to_ray.dot_product(sphere_to_ray) - 1.0;
+        let d = b.powf(2.0) - 4.0 * a * c;
+        if d < 0.0 {
+            return ret;
+        }
+        ret.push(Intersection::new((-b - d.sqrt()) / (2.0 * a), self));
+        ret.push(Intersection::new((-b + d.sqrt()) / (2.0 * a), self));
         ret
     }
 
@@ -82,6 +139,7 @@ impl Hittable for Sphere {
     fn material(&self) -> &Material {
         &self.material
     }
+
     fn transform(&self) -> &Option<Matrix<f64>> {
         &self.transform
     }

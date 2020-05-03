@@ -2,7 +2,7 @@ use ray_trace_challenge::camera::{view_transform, Camera};
 use ray_trace_challenge::colour::{Colour, WHITE};
 use ray_trace_challenge::lighting::Point;
 use ray_trace_challenge::matrix::{Axis, Matrix};
-use ray_trace_challenge::sphere::Sphere;
+use ray_trace_challenge::sphere::{HittableImpl, Sphere};
 use ray_trace_challenge::vec3::TypedVec;
 use ray_trace_challenge::world::World;
 use std::f64::consts::PI;
@@ -66,10 +66,16 @@ fn main() {
     left.material.diffuse = 0.7;
     left.material.specular = 0.3;
 
-    let mut items = vec![floor, left_wall, right_wall, middle, right, left];
+    let mut items: Vec<&dyn HittableImpl> =
+        vec![&floor, &left_wall, &right_wall, &middle, &right, &left];
     world.objects.append(&mut items);
 
-    let mut camera = Camera::new(500f64, 250f64, PI / 3f64);
+    // Good
+    // let mut camera = Camera::new(1000f64, 500f64, PI / 3f64);
+    // Medium
+    // let mut camera = Camera::new(500f64, 250f64, PI / 3f64);
+    // Quick
+    let mut camera = Camera::new(100f64, 50f64, PI / 3f64);
     camera.transform = view_transform(
         TypedVec::point(0f64, 1.5, -5f64),
         TypedVec::point(0f64, 1f64, 0f64),
