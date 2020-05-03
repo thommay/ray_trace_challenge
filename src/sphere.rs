@@ -22,10 +22,7 @@ impl Default for Sphere {
 }
 impl Sphere {
     pub fn new() -> Self {
-        Self {
-            transform: None,
-            material: Material::default(),
-        }
+        Self::default()
     }
 
     pub fn set_transform(&mut self, transform: Matrix<f64>) {
@@ -43,7 +40,8 @@ pub trait Hittable {
     where
         <Self as Hittable>::Output: Hittable + PartialOrd + PartialEq + Debug + Clone;
     fn normal_at(&self, p: TypedVec) -> Result<TypedVec>;
-    fn material(&self) -> Material;
+    fn material(&self) -> &Material;
+    fn transform(&self) -> &Option<Matrix<f64>>;
 }
 
 impl Hittable for Sphere {
@@ -81,8 +79,11 @@ impl Hittable for Sphere {
             Ok((p - c).normalize())
         }
     }
-    fn material(&self) -> Material {
-        self.material.clone()
+    fn material(&self) -> &Material {
+        &self.material
+    }
+    fn transform(&self) -> &Option<Matrix<f64>> {
+        &self.transform
     }
 }
 

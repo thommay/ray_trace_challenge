@@ -5,6 +5,7 @@ use std::cmp::Ordering;
 use std::fmt::Debug;
 use std::ops::Index;
 
+const EPSILON: f64 = 0.0001;
 #[derive(Clone, Debug, PartialEq)]
 pub struct PreComp<'a, H>
 where
@@ -15,6 +16,7 @@ where
     pub(crate) normalv: TypedVec,
     pub(crate) obj: &'a H,
     pub(crate) point: TypedVec,
+    pub(crate) over_point: TypedVec,
     t: f64,
 }
 
@@ -44,6 +46,7 @@ where
         } else {
             false
         };
+        let over_point = point + normalv * EPSILON;
         PreComp {
             t: self.t,
             obj: self.obj,
@@ -51,6 +54,7 @@ where
             eyev,
             normalv,
             inside,
+            over_point,
         }
     }
 }
@@ -148,9 +152,11 @@ where
 #[cfg(test)]
 mod tests {
     use crate::intersection::{Intersection, Intersections};
+    use crate::matrix::Matrix;
     use crate::ray::Ray;
     use crate::sphere::Sphere;
     use crate::vec3::TypedVec;
+    use std::f64::EPSILON;
 
     #[test]
     fn test_intersections() {
@@ -233,5 +239,19 @@ mod tests {
         assert_eq!(comps.eyev, TypedVec::vector(0f64, 0f64, -1f64));
         assert_eq!(comps.normalv, TypedVec::vector(0f64, 0f64, -1f64));
         assert!(comps.inside)
+    }
+
+    #[test]
+    fn test_hit_offset_point() {
+        let r = Ray::new(
+            TypedVec::point(0f64, 0f64, -5f64),
+            TypedVec::vector(0f64, 0f64, 1f64),
+        );
+        let mut s = Sphere::new();
+        s.transform = Option::from(Matrix::translation(0f64, 0f64, 1f64));
+        let i = Intersection::new(5.0, &s);
+        let comps = i.precompute(r);
+        assert!(comps.over_point.z < -EPSILON / 2f64);
+        assert!(comps.point.z > comps.over_point.z)
     }
 }

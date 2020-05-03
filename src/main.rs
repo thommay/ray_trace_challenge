@@ -69,7 +69,7 @@ fn main() {
     let mut items = vec![floor, left_wall, right_wall, middle, right, left];
     world.objects.append(&mut items);
 
-    let mut camera = Camera::new(100f64, 50f64, PI / 3f64);
+    let mut camera = Camera::new(500f64, 250f64, PI / 3f64);
     camera.transform = view_transform(
         TypedVec::point(0f64, 1.5, -5f64),
         TypedVec::point(0f64, 1f64, 0f64),

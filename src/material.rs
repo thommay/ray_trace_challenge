@@ -40,11 +40,15 @@ impl Material {
         point: TypedVec,
         eyev: TypedVec,
         normalv: TypedVec,
+        in_shadow: bool,
     ) -> Colour {
         let colour = self.colour * light.intensity;
         let lightv = (light.position - point).normalize();
         let ambient = colour * self.ambient;
 
+        if in_shadow {
+            return ambient;
+        }
         let light_dot_normal = lightv.dot_product(normalv);
         let (diffuse, specular) = if light_dot_normal < 0f64 {
             (*BLACK, *BLACK)
@@ -82,7 +86,7 @@ mod test {
         let eyev = TypedVec::vector(0f64, 0f64, -1f64);
         let normalv = TypedVec::vector(0f64, 0f64, -1f64);
         let l = lighting::Point::new(TypedVec::point(0f64, 0f64, -10f64), *WHITE);
-        let r = M.lighting(l, *POSITION, eyev, normalv);
+        let r = M.lighting(l, *POSITION, eyev, normalv, false);
         assert_eq!(r, Colour::new(1.9, 1.9, 1.9))
     }
 
@@ -91,7 +95,7 @@ mod test {
         let eyev = TypedVec::vector(0f64, 2f64.sqrt() / 2f64, -2f64.sqrt() / 2f64);
         let normalv = TypedVec::vector(0f64, 0f64, -1f64);
         let l = lighting::Point::new(TypedVec::point(0f64, 0f64, -10f64), *WHITE);
-        let r = M.lighting(l, *POSITION, eyev, normalv);
+        let r = M.lighting(l, *POSITION, eyev, normalv, false);
         assert_eq!(r, Colour::new(1.0, 1.0, 1.0))
     }
 
@@ -100,7 +104,7 @@ mod test {
         let eyev = TypedVec::vector(0f64, 0f64, -1f64);
         let normalv = TypedVec::vector(0f64, 0f64, -1f64);
         let l = lighting::Point::new(TypedVec::point(0f64, 10f64, -10f64), *WHITE);
-        let r = M.lighting(l, *POSITION, eyev, normalv);
+        let r = M.lighting(l, *POSITION, eyev, normalv, false);
         assert_eq!(r.round(10000f64), Colour::new(0.7364, 0.7364, 0.7364))
     }
 
@@ -109,7 +113,7 @@ mod test {
         let eyev = TypedVec::vector(0f64, -2f64.sqrt() / 2f64, -2f64.sqrt() / 2f64);
         let normalv = TypedVec::vector(0f64, 0f64, -1f64);
         let l = lighting::Point::new(TypedVec::point(0f64, 10f64, -10f64), *WHITE);
-        let r = M.lighting(l, *POSITION, eyev, normalv);
+        let r = M.lighting(l, *POSITION, eyev, normalv, false);
         assert_eq!(r.round(10000f64), Colour::new(1.6364, 1.6364, 1.6364))
     }
 
@@ -118,7 +122,16 @@ mod test {
         let eyev = TypedVec::vector(0f64, 0f64, -1f64);
         let normalv = TypedVec::vector(0f64, 0f64, -1f64);
         let l = lighting::Point::new(TypedVec::point(0f64, 0f64, 10f64), *WHITE);
-        let r = M.lighting(l, *POSITION, eyev, normalv);
+        let r = M.lighting(l, *POSITION, eyev, normalv, false);
+        assert_eq!(r.round(100f64), Colour::new(0.1, 0.1, 0.1))
+    }
+
+    #[test]
+    fn test_surface_in_shadow() {
+        let eyev = TypedVec::vector(0f64, 0f64, -1f64);
+        let normalv = TypedVec::vector(0f64, 0f64, -1f64);
+        let l = lighting::Point::new(TypedVec::point(0f64, 0f64, -10f64), *WHITE);
+        let r = M.lighting(l, *POSITION, eyev, normalv, true);
         assert_eq!(r.round(100f64), Colour::new(0.1, 0.1, 0.1))
     }
 }

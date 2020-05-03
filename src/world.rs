@@ -49,10 +49,27 @@ where
     }
 
     fn shade_hit(&self, comps: PreComp<T>) -> Colour {
-        comps
-            .obj
-            .material()
-            .lighting(self.light, comps.point, comps.eyev, comps.normalv)
+        let shadowed = self.is_shadowed(comps.over_point);
+        comps.obj.material().lighting(
+            self.light,
+            comps.over_point,
+            comps.eyev,
+            comps.normalv,
+            shadowed,
+        )
+    }
+
+    fn is_shadowed(&self, point: TypedVec) -> bool {
+        let v = self.light.position - point;
+        let distance = v.magnitude();
+        let toward = v.normalize();
+        let r = Ray::new(point, toward);
+        if let Some(hit) = Intersections::from_iter(self.intersect(r)).hit() {
+            if hit.t < distance {
+                return true;
+            }
+        }
+        false
     }
 
     pub fn colour_at(&self, ray: Ray) -> Colour {
@@ -70,6 +87,7 @@ pub mod test {
     use crate::colour::{Colour, WHITE};
     use crate::intersection::{Intersection, Intersections};
     use crate::lighting;
+    use crate::lighting::Point;
     use crate::material::Material;
     use crate::matrix::Matrix;
     use crate::ray::Ray;
@@ -177,5 +195,49 @@ pub mod test {
             w.colour_at(r).round(100000f64),
             w.objects[1].material.colour
         )
+    }
+
+    #[test]
+    fn test_no_shadow() {
+        let w = default_world();
+        let p = TypedVec::point(0f64, 10f64, 0f64);
+        assert!(!w.is_shadowed(p))
+    }
+
+    #[test]
+    fn test_shadow_obj_between_light_and_point() {
+        let w = default_world();
+        let p = TypedVec::point(10f64, -10f64, 10f64);
+        assert!(w.is_shadowed(p))
+    }
+
+    #[test]
+    fn test_light_between_point_and_obj() {
+        let w = default_world();
+        let p = TypedVec::point(-20f64, 20f64, -20f64);
+        assert!(!w.is_shadowed(p))
+    }
+
+    #[test]
+    fn test_shadow_object_behind_point() {
+        let w = default_world();
+        let p = TypedVec::point(-2f64, 2f64, -2f64);
+        assert!(!w.is_shadowed(p))
+    }
+
+    #[test]
+    fn test_shade_hit_in_shadow() {
+        let mut w = World::new(Point::new(TypedVec::point(0f64, 0f64, -10f64), *WHITE));
+        let s1 = Sphere::default();
+        let mut s2 = Sphere::default();
+        s2.transform = Some(Matrix::translation(0f64, 0f64, 10f64));
+        w.objects = vec![s1, s2.clone()];
+        let r = Ray::new(
+            TypedVec::point(0f64, 0f64, 5f64),
+            TypedVec::vector(0f64, 0f64, 1f64),
+        );
+        let i = Intersection::new(4f64, &s2);
+        let comps = i.precompute(r);
+        assert_eq!(w.shade_hit(comps), Colour::new(0.1, 0.1, 0.1));
     }
 }
