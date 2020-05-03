@@ -7,12 +7,12 @@ use crate::vec3::TypedVec;
 use std::fmt::Debug;
 
 #[derive(Clone, Debug, PartialOrd, PartialEq)]
-struct World<T>
+pub struct World<T>
 where
     T: Hittable + PartialOrd + Debug + Clone,
 {
     light: Point,
-    objects: Vec<T>,
+    pub objects: Vec<T>,
 }
 
 impl<T> Default for World<T>
@@ -66,7 +66,7 @@ where
 }
 
 #[cfg(test)]
-mod test {
+pub mod test {
     use crate::colour::{Colour, WHITE};
     use crate::intersection::{Intersection, Intersections};
     use crate::lighting;
@@ -77,7 +77,7 @@ mod test {
     use crate::vec3::TypedVec;
     use crate::world::World;
 
-    fn default_world() -> World<Sphere> {
+    pub fn default_world() -> World<Sphere> {
         let s1 = Sphere {
             material: Material {
                 colour: Colour::new(0.8, 1.0, 0.6),

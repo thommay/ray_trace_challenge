@@ -274,7 +274,7 @@ where
     }
 
     #[cfg(test)]
-    fn round(&self, factor: T) -> Matrix<T> {
+    pub(crate) fn round(&self, factor: T) -> Matrix<T> {
         Self {
             rows: self.rows,
             cols: self.cols,

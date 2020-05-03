@@ -2,7 +2,7 @@ use crate::colour::{Colour, BLACK, WHITE};
 use crate::lighting::Point;
 use crate::vec3::TypedVec;
 
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub struct Material {
     pub ambient: f64,
     pub colour: Colour,

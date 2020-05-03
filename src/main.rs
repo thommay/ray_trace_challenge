@@ -1,11 +1,11 @@
-use ray_trace_challenge::canvas::Canvas;
+use ray_trace_challenge::camera::{view_transform, Camera};
 use ray_trace_challenge::colour::{Colour, WHITE};
-use ray_trace_challenge::intersection::Intersections;
-use ray_trace_challenge::lighting;
-use ray_trace_challenge::material::Material;
-use ray_trace_challenge::ray::Ray;
-use ray_trace_challenge::sphere::{Hittable, Sphere};
+use ray_trace_challenge::lighting::Point;
+use ray_trace_challenge::matrix::{Axis, Matrix};
+use ray_trace_challenge::sphere::Sphere;
 use ray_trace_challenge::vec3::TypedVec;
+use ray_trace_challenge::world::World;
+use std::f64::consts::PI;
 use std::fs::OpenOptions;
 use std::io::Write;
 
@@ -22,85 +22,62 @@ struct Environment {
 }
 
 fn main() {
-    fn tick(env: &Environment, proj: Projectile, canvas: &mut Canvas) -> Projectile {
-        let position = proj.position + proj.velocity;
-        let velocity = proj.velocity + env.gravity + env.wind;
-        let colour = Colour::new(1f64, 0.0, 0.0);
-        let y = if position.y.round() as usize > canvas.height {
-            canvas.height
-        } else {
-            canvas.height - position.y.round() as usize
-        };
-        let x = position.x.round() as usize;
-        dbg!(&x);
-        dbg!(&y);
-        canvas.write_pixel(x, y, colour);
-        Projectile { velocity, position }
-    }
+    let mut world = World::new(Point::new(TypedVec::point(-10f64, 10f64, -10f64), *WHITE));
 
-    let mut canvas = Canvas::new(100, 100);
+    let mut floor = Sphere::new();
+    floor.transform = Some(Matrix::scaling(10f64, 0.01, 10f64));
+    floor.material.colour = Colour::new(1f64, 0.9f64, 0.9f64);
+    floor.material.specular = 0f64;
 
-    let ray_origin = TypedVec::point(0f64, 0f64, -5f64);
-    let wall_size = 7f64;
-    let pixel_size = wall_size / 100f64;
-    let half = wall_size / 2.0;
-    let mut s = Sphere::new();
-    // let t =
-    //     Matrix::shearing(1f64, 0f64, 0f64, 0f64, 0f64, 0f64) * Matrix::scaling(0.5f64, 1f64, 1f64);
-    // s.set_transform(t);
-    s.set_material(Material {
-        colour: Colour::new(1f64, 0.2, 1f64),
-        ..Default::default()
-    });
+    let mut left_wall = Sphere::new();
+    left_wall.transform = Some(
+        Matrix::translation(0f64, 0f64, 5f64)
+            * Matrix::rotation(Axis::Y, -PI / 4f64)
+            * Matrix::rotation(Axis::X, PI / 2f64)
+            * Matrix::scaling(10f64, 0.01f64, 10f64),
+    );
+    left_wall.material = floor.material;
 
-    let l = lighting::Point::new(TypedVec::point(-10f64, 10f64, -10f64), *WHITE);
-    for y in 0..100 {
-        let world_y = half - pixel_size * y as f64;
-        for x in 0..100 {
-            let world_x = -half + pixel_size * x as f64;
-            let pos = TypedVec::point(world_x, world_y, 10f64);
-            let r = Ray::new(ray_origin, (pos - ray_origin).normalize());
-            let xs = s.intersect(r);
-            let mut xs = Intersections::from_iter(xs);
-            if let Some(hit) = xs.hit() {
-                let point = r.position(hit.t);
-                let n = hit.obj.normal_at(point).unwrap();
-                let eye = -r.direction;
-                let colour = hit.obj.material.lighting(l, point, eye, n);
-                canvas.write_pixel(x as usize, y as usize, colour);
-            }
-        }
-    }
-    // // let mut p = Projectile {
-    // //     position: TypedVec::point(0.0, 1.0, 0.0),
-    // //     velocity: TypedVec::vector(1.0, 1.8, 0.0).normalize() * 11.25,
-    // // };
-    // // let e = Environment {
-    // //     gravity: TypedVec::vector(0.0, -0.1, 0.0),
-    // //     wind: TypedVec::vector(-0.01, 0.0, 0.0),
-    // // };
-    // //
-    // let p = TypedVec::point(0f64, 0f64, 16f64);
-    // let centre = TypedVec::vector(25f64, 25f64, 25f64);
-    // for i in 0..12 {
-    //     let r = Matrix::rotation(Axis::Y, i as f64 * (std::f64::consts::PI / 6f64));
-    //     let h = r * p;
-    //     let centred = h + centre;
-    //     dbg!(&centred);
-    //     canvas.write_pixel(
-    //         centred.x.round() as usize,
-    //         centred.z.round() as usize,
-    //         colour,
-    //     );
-    // }
-    //
-    // let mut ticks = 0;
-    // while p.position.y > 0.0 {
-    //     p = tick(&e, p, &mut canvas);
-    //     ticks += 1;
-    // }
-    // println!("Total ticks: {}", ticks);
-    //
+    let mut right_wall = Sphere::new();
+    right_wall.transform = Some(
+        Matrix::translation(0f64, 0f64, 5f64)
+            * Matrix::rotation(Axis::Y, PI / 4f64)
+            * Matrix::rotation(Axis::X, PI / 2f64)
+            * Matrix::scaling(10f64, 0.01f64, 10f64),
+    );
+    right_wall.material = floor.material;
+
+    let mut middle = Sphere::new();
+    middle.transform = Some(Matrix::translation(-0.5, 1f64, 0.5));
+    middle.material.colour = Colour::new(0.1, 1f64, 0.1);
+    middle.material.diffuse = 0.7;
+    middle.material.specular = 0.3;
+
+    let mut right = Sphere::new();
+    right.transform = Some(Matrix::translation(1.5, 0.5f64, -0.5) * Matrix::scaling(0.5, 0.5, 0.5));
+    right.material.colour = Colour::new(0.1, 1f64, 0.5);
+    right.material.diffuse = 0.7;
+    right.material.specular = 0.3;
+
+    let mut left = Sphere::new();
+    left.transform =
+        Some(Matrix::translation(-1.5, 0.33f64, -0.75) * Matrix::scaling(0.33, 0.33, 0.33));
+    left.material.colour = Colour::new(1f64, 0.8f64, 0.1);
+    left.material.diffuse = 0.7;
+    left.material.specular = 0.3;
+
+    let mut items = vec![floor, left_wall, right_wall, middle, right, left];
+    world.objects.append(&mut items);
+
+    let mut camera = Camera::new(100f64, 50f64, PI / 3f64);
+    camera.transform = view_transform(
+        TypedVec::point(0f64, 1.5, -5f64),
+        TypedVec::point(0f64, 1f64, 0f64),
+        TypedVec::vector(0f64, 1f64, 0f64),
+    );
+
+    let canvas = camera.render(world);
+
     let mut out = OpenOptions::new()
         .create(true)
         .truncate(true)

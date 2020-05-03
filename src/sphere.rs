@@ -6,7 +6,7 @@ use crate::vec3::TypedVec;
 use anyhow::Result;
 use std::fmt::Debug;
 
-#[derive(Clone, Debug, PartialOrd)]
+#[derive(Clone, Debug, PartialOrd, PartialEq)]
 pub struct Sphere {
     pub transform: Option<Matrix<f64>>,
     pub material: Material,
@@ -34,12 +34,6 @@ impl Sphere {
 
     pub fn set_material(&mut self, material: Material) {
         self.material = material;
-    }
-}
-
-impl PartialEq for Sphere {
-    fn eq(&self, other: &Self) -> bool {
-        true
     }
 }
 
