@@ -2,6 +2,7 @@ use ray_trace_challenge::camera::{view_transform, Camera};
 use ray_trace_challenge::colour::{Colour, WHITE};
 use ray_trace_challenge::lighting::Point;
 use ray_trace_challenge::matrix::{Axis, Matrix};
+use ray_trace_challenge::plane::Plane;
 use ray_trace_challenge::sphere::{HittableImpl, Sphere};
 use ray_trace_challenge::vec3::TypedVec;
 use ray_trace_challenge::world::World;
@@ -47,6 +48,8 @@ fn main() {
     );
     right_wall.material = floor.material;
 
+    let plane = Plane::default();
+
     let mut middle = Sphere::new();
     middle.transform = Some(Matrix::translation(-0.5, 1f64, 0.5));
     middle.material.colour = Colour::new(0.1, 1f64, 0.1);
@@ -66,8 +69,7 @@ fn main() {
     left.material.diffuse = 0.7;
     left.material.specular = 0.3;
 
-    let mut items: Vec<&dyn HittableImpl> =
-        vec![&floor, &left_wall, &right_wall, &middle, &right, &left];
+    let mut items: Vec<&dyn HittableImpl> = vec![&plane, &middle, &right, &left];
     world.objects.append(&mut items);
 
     // Good

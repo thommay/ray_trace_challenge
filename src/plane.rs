@@ -8,9 +8,9 @@ use anyhow::Result;
 use std::f64::EPSILON;
 
 #[derive(Clone, Debug, PartialOrd, PartialEq)]
-struct Plane {
+pub struct Plane {
     material: Material,
-    transform: Option<Matrix<f64>>,
+    pub transform: Option<Matrix<f64>>,
 }
 
 impl Default for Plane {
@@ -28,11 +28,17 @@ impl Hittable for Plane {
         if ray.direction.y.abs() < EPSILON {
             return ret;
         }
+        let ray = if let Some(transform) = &self.transform {
+            let t = transform.inverse().unwrap();
+            ray.transform(&t)
+        } else {
+            ray
+        };
         ret.push(Intersection::new(-ray.origin.y / ray.direction.y, self));
         ret
     }
 
-    fn normal_at(&self, p: TypedVec) -> Result<TypedVec> {
+    fn normal_at(&self, _p: TypedVec) -> Result<TypedVec> {
         Ok(TypedVec::vector(0f64, 1f64, 0f64))
     }
     fn material(&self) -> &Material {
@@ -50,11 +56,17 @@ impl Hittable for &Plane {
         if ray.direction.y.abs() < EPSILON {
             return ret;
         }
+        let ray = if let Some(transform) = &self.transform {
+            let t = transform.inverse().unwrap();
+            ray.transform(&t)
+        } else {
+            ray
+        };
         ret.push(Intersection::new(-ray.origin.y / ray.direction.y, self));
         ret
     }
 
-    fn normal_at(&self, p: TypedVec) -> Result<TypedVec> {
+    fn normal_at(&self, _p: TypedVec) -> Result<TypedVec> {
         Ok(TypedVec::vector(0f64, 1f64, 0f64))
     }
     fn material(&self) -> &Material {
@@ -73,7 +85,7 @@ impl HittableImpl for &Plane {}
 mod test {
     use crate::plane::Plane;
     use crate::ray::Ray;
-    use crate::sphere::{Hittable, HittableImpl};
+    use crate::sphere::Hittable;
     use crate::vec3::TypedVec;
 
     #[test]
