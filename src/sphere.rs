@@ -1,6 +1,8 @@
+use crate::colour::Colour;
 use crate::intersection::Intersection;
 use crate::material::Material;
 use crate::matrix::Matrix;
+use crate::pattern::Pattern;
 use crate::ray::Ray;
 use crate::vec3::TypedVec;
 use anyhow::Result;
@@ -40,6 +42,20 @@ pub trait Hittable {
     fn normal_at(&self, p: TypedVec) -> Result<TypedVec>;
     fn material(&self) -> &Material;
     fn transform(&self) -> &Option<Matrix<f64>>;
+
+    fn pattern_at(&self, pattern: &Pattern, point: TypedVec) -> Result<Colour> {
+        let object_point = if let Some(t) = self.transform() {
+            t.inverse()? * point
+        } else {
+            point
+        };
+        let world_point = if let Some(p) = pattern.transform() {
+            p.inverse()? * object_point
+        } else {
+            object_point
+        };
+        Ok(pattern.at(world_point))
+    }
 }
 
 impl<'a, 'b> PartialEq<dyn HittableImpl + 'b> for dyn HittableImpl + 'a {
@@ -147,7 +163,10 @@ impl Hittable for &Sphere {
 
 #[cfg(test)]
 mod test {
+    use crate::colour::*;
     use crate::matrix::{Axis, Matrix};
+    use crate::pattern::Pattern;
+    use crate::pattern::PatternType::Stripe;
     use crate::ray::Ray;
     use crate::sphere::{Hittable, Sphere};
     use crate::vec3::TypedVec;
@@ -302,5 +321,33 @@ mod test {
             n.round(100000f64),
             TypedVec::vector(0f64, 0.97014, -0.24254)
         );
+    }
+
+    #[test]
+    fn test_stripe_object_transform() {
+        let mut s = Sphere::new();
+        s.transform = Some(Matrix::scaling(2f64, 2f64, 2f64));
+        let p = Pattern::new(Stripe, *WHITE, *BLACK);
+        let c = s.pattern_at(&p, TypedVec::point(1.5, 0f64, 0f64)).unwrap();
+        assert_eq!(c, *WHITE)
+    }
+
+    #[test]
+    fn test_stripe_pattern_transform() {
+        let s = Sphere::new();
+        let mut p = Pattern::new(Stripe, *WHITE, *BLACK);
+        p.transform = Some(Matrix::scaling(2f64, 2f64, 2f64));
+        let c = s.pattern_at(&p, TypedVec::point(1.5, 0f64, 0f64)).unwrap();
+        assert_eq!(c, *WHITE)
+    }
+
+    #[test]
+    fn test_stripe_object_pattern_transform() {
+        let mut s = Sphere::new();
+        s.transform = Some(Matrix::scaling(2f64, 2f64, 2f64));
+        let mut p = Pattern::new(Stripe, *WHITE, *BLACK);
+        p.transform = Some(Matrix::translation(0.5f64, 0f64, 0f64));
+        let c = s.pattern_at(&p, TypedVec::point(2.5, 0f64, 0f64)).unwrap();
+        assert_eq!(c, *WHITE)
     }
 }

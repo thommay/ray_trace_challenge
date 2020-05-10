@@ -9,7 +9,7 @@ use std::f64::EPSILON;
 
 #[derive(Clone, Debug, PartialOrd, PartialEq)]
 pub struct Plane {
-    material: Material,
+    pub material: Material,
     pub transform: Option<Matrix<f64>>,
 }
 

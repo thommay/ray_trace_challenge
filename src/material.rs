@@ -1,14 +1,17 @@
 use crate::colour::{Colour, BLACK, WHITE};
 use crate::lighting::Point;
+use crate::pattern::Pattern;
+use crate::sphere::HittableImpl;
 use crate::vec3::TypedVec;
 
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct Material {
     pub ambient: f64,
     pub colour: Colour,
     pub diffuse: f64,
     pub shininess: f64,
     pub specular: f64,
+    pub pattern: Option<Pattern>,
 }
 
 impl Default for Material {
@@ -19,30 +22,45 @@ impl Default for Material {
             diffuse: 0.9,
             shininess: 200f64,
             specular: 0.9,
+            pattern: None,
         }
     }
 }
 
 impl Material {
-    pub fn new(ambient: f64, colour: Colour, diffuse: f64, shininess: f64, specular: f64) -> Self {
+    pub fn new(
+        ambient: f64,
+        colour: Colour,
+        diffuse: f64,
+        shininess: f64,
+        specular: f64,
+        pattern: Option<Pattern>,
+    ) -> Self {
         Material {
             ambient,
             colour,
             diffuse,
             shininess,
             specular,
+            pattern,
         }
     }
 
-    pub fn lighting(
+    pub fn lighting<'l>(
         &self,
+        object: &'l dyn HittableImpl,
         light: Point,
         point: TypedVec,
         eyev: TypedVec,
         normalv: TypedVec,
         in_shadow: bool,
     ) -> Colour {
-        let colour = self.colour * light.intensity;
+        let colour = if let Some(pattern) = &self.pattern {
+            object.pattern_at(pattern, point).unwrap()
+        } else {
+            self.colour
+        } * light.intensity;
+
         let lightv = (light.position - point).normalize();
         let ambient = colour * self.ambient;
 
@@ -70,14 +88,19 @@ impl Material {
 
 #[cfg(test)]
 mod test {
-    use crate::colour::{Colour, WHITE};
+    use crate::colour::*;
     use crate::lighting;
     use crate::material::Material;
+    use crate::pattern::Pattern;
+    use crate::pattern::PatternType::Stripe;
+    use crate::sphere::HittableImpl;
+    use crate::sphere::Sphere;
     use crate::vec3::TypedVec;
     use lazy_static::lazy_static;
 
     lazy_static! {
         static ref M: Material = Material::default();
+        static ref S: Sphere = Sphere::default();
         static ref POSITION: TypedVec = TypedVec::point(0f64, 0f64, 0f64);
     }
 
@@ -86,7 +109,7 @@ mod test {
         let eyev = TypedVec::vector(0f64, 0f64, -1f64);
         let normalv = TypedVec::vector(0f64, 0f64, -1f64);
         let l = lighting::Point::new(TypedVec::point(0f64, 0f64, -10f64), *WHITE);
-        let r = M.lighting(l, *POSITION, eyev, normalv, false);
+        let r = M.lighting(&*S, l, *POSITION, eyev, normalv, false);
         assert_eq!(r, Colour::new(1.9, 1.9, 1.9))
     }
 
@@ -95,7 +118,7 @@ mod test {
         let eyev = TypedVec::vector(0f64, 2f64.sqrt() / 2f64, -2f64.sqrt() / 2f64);
         let normalv = TypedVec::vector(0f64, 0f64, -1f64);
         let l = lighting::Point::new(TypedVec::point(0f64, 0f64, -10f64), *WHITE);
-        let r = M.lighting(l, *POSITION, eyev, normalv, false);
+        let r = M.lighting(&*S, l, *POSITION, eyev, normalv, false);
         assert_eq!(r, Colour::new(1.0, 1.0, 1.0))
     }
 
@@ -104,7 +127,7 @@ mod test {
         let eyev = TypedVec::vector(0f64, 0f64, -1f64);
         let normalv = TypedVec::vector(0f64, 0f64, -1f64);
         let l = lighting::Point::new(TypedVec::point(0f64, 10f64, -10f64), *WHITE);
-        let r = M.lighting(l, *POSITION, eyev, normalv, false);
+        let r = M.lighting(&*S, l, *POSITION, eyev, normalv, false);
         assert_eq!(r.round(10000f64), Colour::new(0.7364, 0.7364, 0.7364))
     }
 
@@ -113,7 +136,7 @@ mod test {
         let eyev = TypedVec::vector(0f64, -2f64.sqrt() / 2f64, -2f64.sqrt() / 2f64);
         let normalv = TypedVec::vector(0f64, 0f64, -1f64);
         let l = lighting::Point::new(TypedVec::point(0f64, 10f64, -10f64), *WHITE);
-        let r = M.lighting(l, *POSITION, eyev, normalv, false);
+        let r = M.lighting(&*S, l, *POSITION, eyev, normalv, false);
         assert_eq!(r.round(10000f64), Colour::new(1.6364, 1.6364, 1.6364))
     }
 
@@ -122,7 +145,7 @@ mod test {
         let eyev = TypedVec::vector(0f64, 0f64, -1f64);
         let normalv = TypedVec::vector(0f64, 0f64, -1f64);
         let l = lighting::Point::new(TypedVec::point(0f64, 0f64, 10f64), *WHITE);
-        let r = M.lighting(l, *POSITION, eyev, normalv, false);
+        let r = M.lighting(&*S, l, *POSITION, eyev, normalv, false);
         assert_eq!(r.round(100f64), Colour::new(0.1, 0.1, 0.1))
     }
 
@@ -131,7 +154,34 @@ mod test {
         let eyev = TypedVec::vector(0f64, 0f64, -1f64);
         let normalv = TypedVec::vector(0f64, 0f64, -1f64);
         let l = lighting::Point::new(TypedVec::point(0f64, 0f64, -10f64), *WHITE);
-        let r = M.lighting(l, *POSITION, eyev, normalv, true);
+        let r = M.lighting(&*S, l, *POSITION, eyev, normalv, true);
         assert_eq!(r.round(100f64), Colour::new(0.1, 0.1, 0.1))
+    }
+
+    #[test]
+    fn test_material_with_pattern() {
+        let p = Pattern::new(Stripe, *WHITE, *BLACK);
+        let m = Material::new(1f64, *WHITE, 0f64, 200f64, 0f64, Some(p));
+        let eyev = TypedVec::vector(0f64, 0f64, -1f64);
+        let normalv = TypedVec::vector(0f64, 0f64, -1f64);
+        let l = lighting::Point::new(TypedVec::point(0f64, 0f64, -10f64), *WHITE);
+        let c1 = m.lighting(
+            &*S,
+            l,
+            TypedVec::point(0.9, 0f64, 0f64),
+            eyev,
+            normalv,
+            true,
+        );
+        let c2 = m.lighting(
+            &*S,
+            l,
+            TypedVec::point(1.1, 0f64, 0f64),
+            eyev,
+            normalv,
+            true,
+        );
+        assert_eq!(c1, *WHITE);
+        assert_eq!(c2, *BLACK);
     }
 }

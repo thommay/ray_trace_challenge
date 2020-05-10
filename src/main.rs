@@ -1,7 +1,9 @@
 use ray_trace_challenge::camera::{view_transform, Camera};
-use ray_trace_challenge::colour::{Colour, WHITE};
+use ray_trace_challenge::colour::*;
 use ray_trace_challenge::lighting::Point;
 use ray_trace_challenge::matrix::{Axis, Matrix};
+use ray_trace_challenge::pattern::Pattern;
+use ray_trace_challenge::pattern::PatternType::Stripe;
 use ray_trace_challenge::plane::Plane;
 use ray_trace_challenge::sphere::{HittableImpl, Sphere};
 use ray_trace_challenge::vec3::TypedVec;
@@ -23,38 +25,38 @@ struct Environment {
 }
 
 fn main() {
-    let mut world = World::new(Point::new(TypedVec::point(-10f64, 10f64, -10f64), *WHITE));
+    let mut world = World::new(Point::new(TypedVec::point(-10f64, 2f64, -10f64), *WHITE));
 
-    let mut floor = Sphere::new();
-    floor.transform = Some(Matrix::scaling(10f64, 0.01, 10f64));
-    floor.material.colour = Colour::new(1f64, 0.9f64, 0.9f64);
-    floor.material.specular = 0f64;
+    let mut plane = Plane::default();
+    plane.material.pattern = Some(Pattern::new(Stripe, *WHITE, *BLACK));
 
-    let mut left_wall = Sphere::new();
-    left_wall.transform = Some(
-        Matrix::translation(0f64, 0f64, 5f64)
-            * Matrix::rotation(Axis::Y, -PI / 4f64)
-            * Matrix::rotation(Axis::X, PI / 2f64)
-            * Matrix::scaling(10f64, 0.01f64, 10f64),
-    );
-    left_wall.material = floor.material;
-
-    let mut right_wall = Sphere::new();
-    right_wall.transform = Some(
-        Matrix::translation(0f64, 0f64, 5f64)
+    let mut ceiling = Plane::default();
+    ceiling.transform = Some(
+        Matrix::translation(0f64, 2.5f64, 0f64)
             * Matrix::rotation(Axis::Y, PI / 4f64)
-            * Matrix::rotation(Axis::X, PI / 2f64)
-            * Matrix::scaling(10f64, 0.01f64, 10f64),
+            * Matrix::scaling(1f64, 10f64, 1f64),
     );
-    right_wall.material = floor.material;
+    ceiling.material.colour = Colour::new(1f64, 0.3f64, 1f64);
+    // ceiling.material.pattern = Some(Pattern::new(Stripe, *WHITE, *BLACK));
 
-    let plane = Plane::default();
+    let mut back_wall = Plane::default();
+    back_wall.transform = Some(
+        Matrix::translation(0f64, 0f64, 5f64)
+            * Matrix::rotation(Axis::X, PI / 2f64)
+            * Matrix::scaling(1f64, 10f64, 1f64),
+    );
+    back_wall.material.ambient = 0.5f64;
+    back_wall.material.pattern = Some(Pattern::new(Stripe, *WHITE, *BLACK));
 
     let mut middle = Sphere::new();
     middle.transform = Some(Matrix::translation(-0.5, 1f64, 0.5));
     middle.material.colour = Colour::new(0.1, 1f64, 0.1);
     middle.material.diffuse = 0.7;
     middle.material.specular = 0.3;
+    let mut p = Pattern::new(Stripe, *WHITE, Colour::new(0.1f64, 0.8f64, 0.1));
+    p.set_transform(Matrix::scaling(0.5, 0.5, 0.5) * Matrix::rotation(Axis::Z, PI / 4f64));
+
+    middle.material.pattern = Some(p);
 
     let mut right = Sphere::new();
     right.transform = Some(Matrix::translation(1.5, 0.5f64, -0.5) * Matrix::scaling(0.5, 0.5, 0.5));
@@ -64,18 +66,18 @@ fn main() {
 
     let mut left = Sphere::new();
     left.transform =
-        Some(Matrix::translation(-1.5, 0.33f64, -0.75) * Matrix::scaling(0.33, 0.33, 0.33));
+        Some(Matrix::translation(-1.7, 0.33f64, -0.75) * Matrix::scaling(0.33, 0.33, 0.33));
     left.material.colour = Colour::new(1f64, 0.8f64, 0.1);
     left.material.diffuse = 0.7;
     left.material.specular = 0.3;
 
-    let mut items: Vec<&dyn HittableImpl> = vec![&plane, &middle, &right, &left];
+    let mut items: Vec<&dyn HittableImpl> = vec![&plane, &back_wall, &middle, &right, &left];
     world.objects.append(&mut items);
 
     // Good
     // let mut camera = Camera::new(1000f64, 500f64, PI / 3f64);
     // Medium
-    // let mut camera = Camera::new(500f64, 250f64, PI / 3f64);
+    let mut camera = Camera::new(500f64, 250f64, PI / 3f64);
     // Quick
     let mut camera = Camera::new(100f64, 50f64, PI / 3f64);
     camera.transform = view_transform(

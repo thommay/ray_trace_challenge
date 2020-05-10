@@ -41,6 +41,7 @@ impl<'a> World<'a> {
     fn shade_hit(&self, comps: PreComp) -> Colour {
         let shadowed = self.is_shadowed(comps.over_point);
         comps.obj.material().lighting(
+            comps.obj,
             self.light,
             comps.over_point,
             comps.eyev,
