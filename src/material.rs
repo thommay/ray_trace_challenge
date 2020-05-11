@@ -93,7 +93,6 @@ mod test {
     use crate::material::Material;
     use crate::pattern::Pattern;
     use crate::pattern::PatternType::Stripe;
-    use crate::sphere::HittableImpl;
     use crate::sphere::Sphere;
     use crate::vec3::TypedVec;
     use lazy_static::lazy_static;
@@ -160,7 +159,7 @@ mod test {
 
     #[test]
     fn test_material_with_pattern() {
-        let p = Pattern::new(Stripe, *WHITE, *BLACK);
+        let p = Pattern::new(Stripe, *WHITE, *BLACK, false);
         let m = Material::new(1f64, *WHITE, 0f64, 200f64, 0f64, Some(p));
         let eyev = TypedVec::vector(0f64, 0f64, -1f64);
         let normalv = TypedVec::vector(0f64, 0f64, -1f64);

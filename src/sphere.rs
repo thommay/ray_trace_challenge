@@ -327,7 +327,7 @@ mod test {
     fn test_stripe_object_transform() {
         let mut s = Sphere::new();
         s.transform = Some(Matrix::scaling(2f64, 2f64, 2f64));
-        let p = Pattern::new(Stripe, *WHITE, *BLACK);
+        let p = Pattern::new(Stripe, *WHITE, *BLACK, false);
         let c = s.pattern_at(&p, TypedVec::point(1.5, 0f64, 0f64)).unwrap();
         assert_eq!(c, *WHITE)
     }
@@ -335,7 +335,7 @@ mod test {
     #[test]
     fn test_stripe_pattern_transform() {
         let s = Sphere::new();
-        let mut p = Pattern::new(Stripe, *WHITE, *BLACK);
+        let mut p = Pattern::new(Stripe, *WHITE, *BLACK, false);
         p.transform = Some(Matrix::scaling(2f64, 2f64, 2f64));
         let c = s.pattern_at(&p, TypedVec::point(1.5, 0f64, 0f64)).unwrap();
         assert_eq!(c, *WHITE)
@@ -345,7 +345,7 @@ mod test {
     fn test_stripe_object_pattern_transform() {
         let mut s = Sphere::new();
         s.transform = Some(Matrix::scaling(2f64, 2f64, 2f64));
-        let mut p = Pattern::new(Stripe, *WHITE, *BLACK);
+        let mut p = Pattern::new(Stripe, *WHITE, *BLACK, false);
         p.transform = Some(Matrix::translation(0.5f64, 0f64, 0f64));
         let c = s.pattern_at(&p, TypedVec::point(2.5, 0f64, 0f64)).unwrap();
         assert_eq!(c, *WHITE)
