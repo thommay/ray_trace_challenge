@@ -1,4 +1,4 @@
-use crate::colour::Colour;
+use crate::colour::{Colour, WHITE};
 use crate::matrix::Matrix;
 use crate::vec3::TypedVec;
 use lazy_static::lazy_static;
@@ -9,6 +9,7 @@ pub enum PatternType {
     Gradient,
     Ring,
     Stripe,
+    None,
 }
 
 #[derive(Debug, Clone, PartialOrd, PartialEq)]
@@ -20,6 +21,17 @@ pub struct Pattern {
     pub(crate) transform: Option<Matrix<f64>>,
 }
 
+impl Default for Pattern {
+    fn default() -> Self {
+        Self {
+            is: PatternType::None,
+            transform: Some(Matrix::identity(4)),
+            a: *WHITE,
+            b: *WHITE,
+            perturb: false,
+        }
+    }
+}
 impl Pattern {
     pub fn new(is: PatternType, a: Colour, b: Colour, perturb: bool) -> Self {
         Pattern {
@@ -77,6 +89,7 @@ impl Pattern {
             PatternType::Gradient => self.gradient_at(point),
             PatternType::Ring => self.ring_at(point),
             PatternType::Stripe => self.stripe_at(point),
+            PatternType::None => self.a,
         }
     }
 
@@ -106,7 +119,7 @@ impl Pattern {
 
     fn ring_at(&self, point: TypedVec) -> Colour {
         let (x, _, z) = self.perturb(point);
-        if (x.powf(2f64) + z.powf(2f64)).sqrt().floor() % 2f64 == 0f64 {
+        if (x.powi(2) + z.powi(2)).sqrt().floor() % 2f64 == 0f64 {
             self.a
         } else {
             self.b

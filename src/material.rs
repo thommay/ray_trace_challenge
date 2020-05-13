@@ -9,8 +9,11 @@ pub struct Material {
     pub ambient: f64,
     pub colour: Colour,
     pub diffuse: f64,
+    pub reflective: f64,
+    pub refractive_index: f64,
     pub shininess: f64,
     pub specular: f64,
+    pub transparency: f64,
     pub pattern: Option<Pattern>,
 }
 
@@ -20,8 +23,11 @@ impl Default for Material {
             ambient: 0.1,
             colour: *WHITE,
             diffuse: 0.9,
+            reflective: 0.0,
+            refractive_index: 1.0,
             shininess: 200f64,
             specular: 0.9,
+            transparency: 0.0,
             pattern: None,
         }
     }
@@ -32,17 +38,23 @@ impl Material {
         ambient: f64,
         colour: Colour,
         diffuse: f64,
+        reflective: f64,
+        refractive_index: f64,
         shininess: f64,
         specular: f64,
+        transparency: f64,
         pattern: Option<Pattern>,
     ) -> Self {
         Material {
             ambient,
             colour,
             diffuse,
+            reflective,
+            refractive_index,
             shininess,
             specular,
             pattern,
+            transparency,
         }
     }
 
@@ -160,7 +172,7 @@ mod test {
     #[test]
     fn test_material_with_pattern() {
         let p = Pattern::new(Stripe, *WHITE, *BLACK, false);
-        let m = Material::new(1f64, *WHITE, 0f64, 200f64, 0f64, Some(p));
+        let m = Material::new(1f64, *WHITE, 0f64, 0f64, 1.0, 200f64, 0f64, 0.0, Some(p));
         let eyev = TypedVec::vector(0f64, 0f64, -1f64);
         let normalv = TypedVec::vector(0f64, 0f64, -1f64);
         let l = lighting::Point::new(TypedVec::point(0f64, 0f64, -10f64), *WHITE);

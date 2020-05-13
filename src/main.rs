@@ -3,7 +3,7 @@ use ray_trace_challenge::colour::*;
 use ray_trace_challenge::lighting::Point;
 use ray_trace_challenge::matrix::{Axis, Matrix};
 use ray_trace_challenge::pattern::Pattern;
-use ray_trace_challenge::pattern::PatternType::{Checker, Stripe};
+use ray_trace_challenge::pattern::PatternType::Stripe;
 use ray_trace_challenge::plane::Plane;
 use ray_trace_challenge::sphere::{HittableImpl, Sphere};
 use ray_trace_challenge::vec3::TypedVec;
@@ -28,7 +28,8 @@ fn main() {
     let mut world = World::new(Point::new(TypedVec::point(-10f64, 2f64, -10f64), *WHITE));
 
     let mut plane = Plane::default();
-    plane.material.pattern = Some(Pattern::new(Checker, *WHITE, *BLACK, false));
+    plane.material.reflective = 0.7;
+    plane.material.specular = 0.3;
 
     let mut ceiling = Plane::default();
     ceiling.transform = Some(
@@ -48,21 +49,25 @@ fn main() {
     back_wall.material.ambient = 0.5f64;
     back_wall.material.pattern = Some(Pattern::new(Stripe, *WHITE, *BLACK, false));
 
-    let mut middle = Sphere::new();
+    let mut middle = Sphere::glass();
     middle.transform = Some(Matrix::translation(-0.5, 1f64, 0.5));
     middle.material.colour = Colour::new(0.1, 1f64, 0.1);
-    middle.material.diffuse = 0.7;
-    middle.material.specular = 0.3;
-    let mut p = Pattern::ring(*WHITE, Colour::new(0.1f64, 0.8f64, 0.1), true);
-    p.set_transform(Matrix::scaling(0.5, 0.5, 0.5) * Matrix::rotation(Axis::Z, PI / 4f64));
+    middle.material.reflective = 0.9;
+    middle.material.diffuse = 0.5;
 
-    middle.material.pattern = Some(p);
-
+    // let mut p = Pattern::ring(*WHITE, Colour::new(0.1f64, 0.8f64, 0.1), true);
+    // p.set_transform(Matrix::scaling(0.5, 0.5, 0.5) * Matrix::rotation(Axis::Z, PI / 4f64));
+    // middle.material.pattern = Some(p);
+    //
     let mut right = Sphere::new();
     right.transform = Some(Matrix::translation(1.5, 0.5f64, -0.5) * Matrix::scaling(0.5, 0.5, 0.5));
     right.material.colour = Colour::new(0.1, 1f64, 0.5);
     right.material.diffuse = 0.7;
-    right.material.specular = 0.3;
+    right.material.specular = 1f64;
+    right.material.shininess = 300f64;
+
+    right.material.reflective = 0.8;
+    right.material.transparency = 0.9;
     right.material.pattern = Some({
         let mut p = Pattern::ring(*WHITE, right.material.colour, true);
         p.set_transform(Matrix::scaling(0.15, 0.15, 0.25));

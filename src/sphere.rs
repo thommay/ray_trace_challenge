@@ -28,6 +28,18 @@ impl Sphere {
         Self::default()
     }
 
+    pub fn glass() -> Self {
+        Self {
+            material: {
+                let mut m = Material::default();
+                m.transparency = 1.0;
+                m.refractive_index = 1.5;
+                m
+            },
+            ..Default::default()
+        }
+    }
+
     pub fn set_transform(&mut self, transform: Matrix<f64>) {
         self.transform = Some(transform);
     }
@@ -87,7 +99,7 @@ impl Hittable for Sphere {
         let a: f64 = ray.direction.dot_product(ray.direction);
         let b: f64 = 2.0 * ray.direction.dot_product(sphere_to_ray);
         let c: f64 = sphere_to_ray.dot_product(sphere_to_ray) - 1.0;
-        let d = b.powf(2.0) - 4.0 * a * c;
+        let d = b.powi(2) - 4.0 * a * c;
         if d < 0.0 {
             return ret;
         }
@@ -131,7 +143,7 @@ impl Hittable for &Sphere {
         let a: f64 = ray.direction.dot_product(ray.direction);
         let b: f64 = 2.0 * ray.direction.dot_product(sphere_to_ray);
         let c: f64 = sphere_to_ray.dot_product(sphere_to_ray) - 1.0;
-        let d = b.powf(2.0) - 4.0 * a * c;
+        let d = b.powi(2) - 4.0 * a * c;
         if d < 0.0 {
             return ret;
         }

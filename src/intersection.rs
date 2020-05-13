@@ -15,7 +15,28 @@ pub struct PreComp<'a> {
     pub(crate) obj: &'a dyn HittableImpl,
     pub(crate) point: TypedVec,
     pub(crate) over_point: TypedVec,
+    pub(crate) under_point: TypedVec,
+    pub(crate) reflectv: TypedVec,
     t: f64,
+    pub(crate) n1: f64,
+    pub(crate) n2: f64,
+}
+
+impl<'a> PreComp<'a> {
+    pub fn schlick(&self) -> f64 {
+        let mut cos = self.eyev.dot_product(self.normalv);
+        if self.n1 > self.n2 {
+            let n = self.n1 / self.n2;
+            let sin2_t = n.powi(2) * (1f64 - cos.powi(2));
+            if sin2_t > 1f64 {
+                return 1.0;
+            }
+            let cos_t = (1.0 - sin2_t).sqrt();
+            cos = cos_t;
+        }
+        let r0 = ((self.n1 - self.n2) / (self.n1 + self.n2)).powi(2);
+        r0 + (1f64 - r0) * (1f64 - cos).powi(5)
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -28,7 +49,7 @@ impl<'a> Intersection<'a> {
     pub fn new(t: f64, obj: &'a dyn HittableImpl) -> Self {
         Intersection { t, obj }
     }
-    pub fn precompute(&self, ray: Ray) -> PreComp {
+    pub fn precompute(&self, ray: Ray, xs: &Intersections) -> PreComp {
         let point = ray.position(self.t);
         let mut normalv = self.obj.normal_at(point).unwrap();
         let eyev = -ray.direction;
@@ -39,6 +60,33 @@ impl<'a> Intersection<'a> {
             false
         };
         let over_point = point + normalv * EPSILON;
+        let under_point = point - normalv * EPSILON;
+        let reflectv = ray.direction.reflect(normalv);
+        let mut containers: Vec<&dyn HittableImpl> = vec![];
+        let mut n1 = 0f64;
+        let mut n2 = 0f64;
+        for i in xs.clone().into_iter() {
+            if self == &i {
+                n1 = if containers.is_empty() {
+                    1f64
+                } else {
+                    containers.last().unwrap().material().refractive_index
+                };
+            }
+            if containers.contains(&i.obj) {
+                containers.retain(|&x| x != i.obj);
+            } else {
+                containers.push(i.obj)
+            }
+            if self == &i {
+                n2 = if containers.is_empty() {
+                    1f64
+                } else {
+                    containers.last().unwrap().material().refractive_index
+                };
+                break;
+            }
+        }
         PreComp {
             t: self.t,
             obj: self.obj,
@@ -47,6 +95,10 @@ impl<'a> Intersection<'a> {
             normalv,
             inside,
             over_point,
+            under_point,
+            reflectv,
+            n1,
+            n2,
         }
     }
 }
@@ -57,7 +109,7 @@ impl<'a> PartialOrd for Intersection<'a> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Intersections<'a>(Vec<Intersection<'a>>);
 
 impl<'a> Intersections<'a> {
@@ -105,9 +157,10 @@ impl<'a> Iterator for IntersectionsIterator<'a> {
     type Item = Intersection<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
+        let pos = self.pos;
         self.pos += 1;
-        if self.pos < self.i.0.len() {
-            Some(self.i[self.pos].clone())
+        if pos < self.i.0.len() {
+            Some(self.i[pos].clone())
         } else {
             None
         }
@@ -123,12 +176,18 @@ impl<'a> Index<usize> for Intersections<'a> {
 
 #[cfg(test)]
 mod tests {
+    use crate::intersection;
     use crate::intersection::{Intersection, Intersections};
     use crate::matrix::Matrix;
+    use crate::plane::Plane;
     use crate::ray::Ray;
     use crate::sphere::Sphere;
     use crate::vec3::TypedVec;
     use std::f64::EPSILON;
+
+    fn roundf(val: f64, factor: f64) -> f64 {
+        (val * factor).round() / factor
+    }
 
     #[test]
     fn test_intersections() {
@@ -187,7 +246,8 @@ mod tests {
         );
         let s = Sphere::new();
         let i = Intersection::new(4.0, &s);
-        let comps = i.precompute(r);
+        let xs = Intersections::from_iter(vec![i.clone()]);
+        let comps = i.precompute(r, &xs);
         assert_eq!(comps.t, i.t);
         assert_eq!(comps.obj, i.obj);
         assert_eq!(comps.point, TypedVec::point(0f64, 0f64, -1f64));
@@ -204,7 +264,8 @@ mod tests {
         );
         let s = Sphere::new();
         let i = Intersection::new(1.0, &s);
-        let comps = i.precompute(r);
+        let xs = Intersections::from_iter(vec![i.clone()]);
+        let comps = i.precompute(r, &xs);
         assert_eq!(comps.t, i.t);
         assert_eq!(comps.obj, i.obj);
         assert_eq!(comps.point, TypedVec::point(0f64, 0f64, 1f64));
@@ -222,8 +283,123 @@ mod tests {
         let mut s = Sphere::new();
         s.transform = Option::from(Matrix::translation(0f64, 0f64, 1f64));
         let i = Intersection::new(5.0, &s);
-        let comps = i.precompute(r);
+        let xs = Intersections::from_iter(vec![i.clone()]);
+        let comps = i.precompute(r, &xs);
         assert!(comps.over_point.z < -EPSILON / 2f64);
         assert!(comps.point.z > comps.over_point.z)
+    }
+
+    #[test]
+    fn test_precompute_reflection() {
+        let s = Plane::default();
+        let r = Ray::new(
+            TypedVec::point(0f64, 1f64, -1f64),
+            TypedVec::vector(0f64, -2f64.sqrt() / 2f64, 2f64.sqrt() / 2f64),
+        );
+        let i = Intersection::new(2f64.sqrt(), &s);
+        let xs = Intersections::from_iter(vec![i.clone()]);
+        let comps = i.precompute(r, &xs);
+        assert_eq!(
+            comps.reflectv,
+            TypedVec::vector(0f64, 2f64.sqrt() / 2f64, 2f64.sqrt() / 2f64)
+        )
+    }
+
+    #[test]
+    fn test_find_nx_at_intersections() {
+        let mut a = Sphere::glass();
+        a.transform = Some(Matrix::scaling(2f64, 2f64, 2f64));
+        a.material.refractive_index = 1.5;
+        let mut b = Sphere::glass();
+        b.transform = Some(Matrix::translation(0f64, 0f64, -0.25));
+        b.material.refractive_index = 2.0;
+        let mut c = Sphere::glass();
+        c.transform = Some(Matrix::translation(0f64, 0f64, 0.25));
+        c.material.refractive_index = 2.5;
+        let r = Ray::new(
+            TypedVec::point(0f64, 0f64, -4f64),
+            TypedVec::vector(0f64, 0f64, 1f64),
+        );
+        let x = vec![
+            Intersection::new(2f64, &a),
+            Intersection::new(2.75f64, &b),
+            Intersection::new(3.25f64, &c),
+            Intersection::new(4.75f64, &b),
+            Intersection::new(5.25f64, &c),
+            Intersection::new(6f64, &a),
+        ];
+        let xs = Intersections::from_iter(x);
+        for test in vec![
+            (0, 1.0, 1.5),
+            (1, 1.5, 2.0),
+            (2, 2.0, 2.5),
+            (3, 2.5, 2.5),
+            (4, 2.5, 1.5),
+            (5, 1.5, 1.0),
+        ]
+        .iter()
+        {
+            let (i, n1, n2) = test;
+            let c = xs[*i].precompute(r, &xs);
+            assert_eq!(c.n1, *n1);
+            assert_eq!(c.n2, *n2);
+        }
+    }
+
+    #[test]
+    fn test_under_point() {
+        let r = Ray::new(
+            TypedVec::point(0f64, 0f64, -5f64),
+            TypedVec::vector(0f64, 0f64, 1f64),
+        );
+        let mut c = Sphere::glass();
+        c.transform = Some(Matrix::translation(0f64, 0f64, 1f64));
+        let i = Intersection::new(5f64, &c);
+        let xs = Intersections::from_iter(vec![i.clone()]);
+        let comps = i.precompute(r, &xs);
+        assert!(comps.under_point.z > intersection::EPSILON / 2f64);
+        assert!(comps.point.z < comps.under_point.z);
+    }
+
+    #[test]
+    fn test_schlick_total_internal() {
+        let s = Sphere::glass();
+        let r = Ray::new(
+            TypedVec::point(0f64, 0f64, -2f64.sqrt() / 2f64),
+            TypedVec::vector(0f64, 1f64, 0f64),
+        );
+        let xs = Intersections::from_iter(vec![
+            Intersection::new(-2f64.sqrt() / 2f64, &s),
+            Intersection::new(2f64.sqrt() / 2f64, &s),
+        ]);
+        let comps = xs[1].precompute(r, &xs);
+        assert_eq!(comps.schlick(), 1f64)
+    }
+
+    #[test]
+    fn test_schlick_perpendicular() {
+        let s = Sphere::glass();
+        let r = Ray::new(
+            TypedVec::point(0f64, 0f64, 0f64),
+            TypedVec::vector(0f64, 1f64, 0f64),
+        );
+        let xs = Intersections::from_iter(vec![
+            Intersection::new(-1f64, &s),
+            Intersection::new(1f64, &s),
+        ]);
+        let comps = xs[1].precompute(r, &xs);
+        assert_eq!(roundf(comps.schlick(), 100_000f64), 0.04)
+    }
+
+    #[test]
+    fn test_schlick_n2_gt_n1() {
+        let s = Sphere::glass();
+        let r = Ray::new(
+            TypedVec::point(0f64, 0.99f64, -2f64),
+            TypedVec::vector(0f64, 0f64, 1f64),
+        );
+        let xs = Intersections::from_iter(vec![Intersection::new(1.8589f64, &s)]);
+        let comps = xs[0].precompute(r, &xs);
+        assert_eq!(roundf(comps.schlick(), 100_000f64), 0.48873)
     }
 }
