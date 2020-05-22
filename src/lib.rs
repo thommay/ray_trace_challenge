@@ -1,6 +1,7 @@
 pub mod camera;
 pub mod canvas;
 pub mod colour;
+pub mod cube;
 pub mod intersection;
 pub mod lighting;
 pub mod material;

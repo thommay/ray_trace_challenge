@@ -1,5 +1,6 @@
 use ray_trace_challenge::camera::{view_transform, Camera};
 use ray_trace_challenge::colour::*;
+use ray_trace_challenge::cube::Cube;
 use ray_trace_challenge::lighting::Point;
 use ray_trace_challenge::matrix::{Axis, Matrix};
 use ray_trace_challenge::pattern::Pattern;
@@ -81,7 +82,10 @@ fn main() {
     left.material.diffuse = 0.7;
     left.material.specular = 0.3;
 
-    let mut items: Vec<&dyn HittableImpl> = vec![&plane, &back_wall, &middle, &right, &left];
+    let mut cube = Cube::default();
+    cube.transform =
+        Some(Matrix::translation(-1.2, 0.5f64, -0.75) * Matrix::scaling(0.25, 0.25, 0.25));
+    let mut items: Vec<&dyn HittableImpl> = vec![&plane, &back_wall, &middle, &right, &left, &cube];
     world.objects.append(&mut items);
 
     // Good

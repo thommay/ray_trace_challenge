@@ -5,7 +5,7 @@ use std::cmp::Ordering;
 use std::fmt::Debug;
 use std::ops::Index;
 
-const EPSILON: f64 = 0.0001;
+pub const EPSILON: f64 = 0.0001;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct PreComp<'a> {
@@ -177,13 +177,13 @@ impl<'a> Index<usize> for Intersections<'a> {
 #[cfg(test)]
 mod tests {
     use crate::intersection;
+    use crate::intersection::EPSILON;
     use crate::intersection::{Intersection, Intersections};
     use crate::matrix::Matrix;
     use crate::plane::Plane;
     use crate::ray::Ray;
     use crate::sphere::Sphere;
     use crate::vec3::TypedVec;
-    use std::f64::EPSILON;
 
     fn roundf(val: f64, factor: f64) -> f64 {
         (val * factor).round() / factor

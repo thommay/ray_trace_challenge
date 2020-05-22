@@ -1,11 +1,11 @@
 use crate::intersection::Intersection;
+use crate::intersection::EPSILON;
 use crate::material::Material;
 use crate::matrix::Matrix;
 use crate::ray::Ray;
 use crate::sphere::{Hittable, HittableImpl};
 use crate::vec3::TypedVec;
 use anyhow::Result;
-use std::f64::EPSILON;
 
 #[derive(Clone, Debug, PartialOrd, PartialEq)]
 pub struct Plane {
@@ -13,17 +13,8 @@ pub struct Plane {
     pub transform: Option<Matrix<f64>>,
 }
 
-impl Default for Plane {
-    fn default() -> Self {
-        Self {
-            transform: None,
-            material: Material::default(),
-        }
-    }
-}
-
-impl Hittable for Plane {
-    fn intersect(&self, ray: Ray) -> Vec<Intersection> {
+impl Plane {
+    fn local_intersect(&self, ray: Ray) -> Vec<Intersection> {
         let mut ret = Vec::new();
         if ray.direction.y.abs() < EPSILON {
             return ret;
@@ -37,7 +28,21 @@ impl Hittable for Plane {
         ret.push(Intersection::new(-ray.origin.y / ray.direction.y, self));
         ret
     }
+}
 
+impl Default for Plane {
+    fn default() -> Self {
+        Self {
+            transform: None,
+            material: Material::default(),
+        }
+    }
+}
+
+impl Hittable for Plane {
+    fn intersect(&self, ray: Ray) -> Vec<Intersection> {
+        self.local_intersect(ray)
+    }
     fn normal_at(&self, _p: TypedVec) -> Result<TypedVec> {
         Ok(TypedVec::vector(0f64, 1f64, 0f64))
     }
@@ -52,18 +57,7 @@ impl Hittable for Plane {
 
 impl Hittable for &Plane {
     fn intersect(&self, ray: Ray) -> Vec<Intersection> {
-        let mut ret = Vec::new();
-        if ray.direction.y.abs() < EPSILON {
-            return ret;
-        }
-        let ray = if let Some(transform) = &self.transform {
-            let t = transform.inverse().unwrap();
-            ray.transform(&t)
-        } else {
-            ray
-        };
-        ret.push(Intersection::new(-ray.origin.y / ray.direction.y, self));
-        ret
+        self.local_intersect(ray)
     }
 
     fn normal_at(&self, _p: TypedVec) -> Result<TypedVec> {
