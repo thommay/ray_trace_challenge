@@ -1,10 +1,10 @@
 use crate::intersection::Intersection;
-use crate::intersection::EPSILON;
 use crate::material::Material;
 use crate::matrix::Matrix;
 use crate::ray::Ray;
 use crate::sphere::{Hittable, HittableImpl};
 use crate::vec3::TypedVec;
+use crate::ZeroIsh;
 use anyhow::Result;
 
 #[derive(Clone, Debug, PartialOrd, PartialEq)]
@@ -16,7 +16,7 @@ pub struct Plane {
 impl Plane {
     fn local_intersect(&self, ray: Ray) -> Vec<Intersection> {
         let mut ret = Vec::new();
-        if ray.direction.y.abs() < EPSILON {
+        if ray.direction.y.zeroish() {
             return ret;
         }
         let ray = if let Some(transform) = &self.transform {
