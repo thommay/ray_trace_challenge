@@ -538,7 +538,7 @@ pub mod test {
         let xs = Intersections::from_iter(x);
         let comps = xs[2].precompute(r, &xs);
         let c = w.refracted_colour(comps, 5);
-        assert_eq!(c, Colour::new(0f64, 0.99888, 0.04725));
+        assert_eq!(c.round(100_000f64), Colour::new(0f64, 0.99878, 0.04724));
     }
 
     #[test]

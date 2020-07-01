@@ -89,7 +89,7 @@ impl Pattern {
             PatternType::Gradient => self.gradient_at(point),
             PatternType::Ring => self.ring_at(point),
             PatternType::Stripe => self.stripe_at(point),
-            PatternType::None => self.a,
+            PatternType::None => self.test_pattern_at(point),
         }
     }
 
@@ -133,6 +133,10 @@ impl Pattern {
         } else {
             self.b
         }
+    }
+
+    fn test_pattern_at(&self, point: TypedVec) -> Colour {
+        Colour::new(point.x, point.y, point.z)
     }
 
     fn perturb(&self, point: TypedVec) -> (f64, f64, f64) {
@@ -243,9 +247,40 @@ fn perlin_noise(x: f64, y: f64, z: f64) -> f64 {
 #[cfg(test)]
 mod test {
     use crate::colour::*;
+    use crate::hittable::HittableImpl;
+    use crate::matrix::Matrix;
     use crate::pattern::Pattern;
     use crate::pattern::PatternType::Stripe;
+    use crate::sphere::Sphere;
     use crate::vec3::TypedVec;
+
+    #[test]
+    fn test_pattern_object_transform() {
+        let mut shape = Sphere::default();
+        shape.transform = Some(Matrix::scaling(2.0, 2.0, 2.0));
+        let pattern = Pattern::default();
+        let c = shape.pattern_at(&pattern, TypedVec::point(2.0, 3.0, 4.0));
+        assert_eq!(c.unwrap(), Colour::new(1.0, 1.5, 2.0))
+    }
+
+    #[test]
+    fn test_pattern_pattern_transform() {
+        let shape = Sphere::default();
+        let mut pattern = Pattern::default();
+        pattern.transform = Some(Matrix::scaling(2.0, 2.0, 2.0));
+        let c = shape.pattern_at(&pattern, TypedVec::point(2.0, 3.0, 4.0));
+        assert_eq!(c.unwrap(), Colour::new(1.0, 1.5, 2.0))
+    }
+
+    #[test]
+    fn test_pattern_object_pattern_transform() {
+        let mut shape = Sphere::default();
+        shape.transform = Some(Matrix::scaling(2.0, 2.0, 2.0));
+        let mut pattern = Pattern::default();
+        pattern.transform = Some(Matrix::translation(0.5, 1.0, 1.5));
+        let c = shape.pattern_at(&pattern, TypedVec::point(2.5, 3.0, 3.5));
+        assert_eq!(c.unwrap(), Colour::new(0.75, 0.5, 0.25))
+    }
 
     #[test]
     fn test_stripe_constant_y() {
