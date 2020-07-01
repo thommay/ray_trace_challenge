@@ -24,12 +24,6 @@ impl Cube {
         }
     }
     fn local_intersect(&self, ray: Ray) -> Vec<Intersection> {
-        let ray = if let Some(transform) = &self.transform {
-            let t = transform.inverse().unwrap();
-            ray.transform(&t)
-        } else {
-            ray
-        };
         let (xtmin, xtmax) = self.check_axis(ray.origin.x, ray.direction.x);
         let (ytmin, ytmax) = self.check_axis(ray.origin.y, ray.direction.y);
         let (ztmin, ztmax) = self.check_axis(ray.origin.z, ray.direction.z);
@@ -69,7 +63,7 @@ impl Cube {
 }
 
 impl HittableImpl for Cube {
-    fn intersect(&self, ray: Ray) -> Vec<Intersection> {
+    fn h_intersect(&self, ray: Ray) -> Vec<Intersection> {
         self.local_intersect(ray)
     }
 
@@ -89,7 +83,7 @@ impl HittableImpl for Cube {
 #[cfg(test)]
 mod test {
     use crate::cube::Cube;
-    use crate::hittable::HittableImpl;
+    use crate::hittable::{Hittable, HittableImpl};
     use crate::ray::Ray;
     use crate::vec3::TypedVec;
 

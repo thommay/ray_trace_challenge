@@ -31,13 +31,7 @@ impl Sphere {
     }
 
     fn local_intersect<'a>(&self, ray: Ray) -> Vec<Intersection> {
-        let mut ret = Vec::new();
-        let ray = if let Some(transform) = &self.transform {
-            let t = transform.inverse().unwrap();
-            ray.transform(&t)
-        } else {
-            ray
-        };
+        let mut ret = vec![];
         let sphere_to_ray = ray.origin - TypedVec::point(0.0, 0.0, 0.0);
         let a: f64 = ray.direction.dot_product(ray.direction);
         let b: f64 = 2.0 * ray.direction.dot_product(sphere_to_ray);
@@ -74,7 +68,7 @@ impl Sphere {
 }
 
 impl HittableImpl for Sphere {
-    fn intersect(&self, ray: Ray) -> Vec<Intersection> {
+    fn h_intersect(&self, ray: Ray) -> Vec<Intersection> {
         self.local_intersect(ray)
     }
 
@@ -94,7 +88,7 @@ impl HittableImpl for Sphere {
 #[cfg(test)]
 mod test {
     use crate::colour::*;
-    use crate::hittable::HittableImpl;
+    use crate::hittable::{Hittable, HittableImpl};
     use crate::matrix::{Axis, Matrix};
     use crate::pattern::Pattern;
     use crate::pattern::PatternType::Stripe;

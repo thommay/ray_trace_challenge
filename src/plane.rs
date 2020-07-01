@@ -19,12 +19,6 @@ impl Plane {
         if ray.direction.y.zeroish() {
             return ret;
         }
-        let ray = if let Some(transform) = &self.transform {
-            let t = transform.inverse().unwrap();
-            ray.transform(&t)
-        } else {
-            ray
-        };
         ret.push(Intersection::new(-ray.origin.y / ray.direction.y, self));
         ret
     }
@@ -40,7 +34,7 @@ impl Default for Plane {
 }
 
 impl HittableImpl for Plane {
-    fn intersect(&self, ray: Ray) -> Vec<Intersection> {
+    fn h_intersect(&self, ray: Ray) -> Vec<Intersection> {
         self.local_intersect(ray)
     }
     fn normal_at(&self, _p: TypedVec) -> Result<TypedVec> {
@@ -57,7 +51,7 @@ impl HittableImpl for Plane {
 
 #[cfg(test)]
 mod test {
-    use crate::hittable::HittableImpl;
+    use crate::hittable::Hittable;
     use crate::plane::Plane;
     use crate::ray::Ray;
     use crate::vec3::TypedVec;

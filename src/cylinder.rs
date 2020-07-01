@@ -31,12 +31,6 @@ impl Default for Cylinder {
 
 impl Cylinder {
     fn local_intersect(&self, ray: Ray) -> Vec<Intersection> {
-        let ray = if let Some(transform) = &self.transform {
-            let t = transform.inverse().unwrap();
-            ray.transform(&t)
-        } else {
-            ray
-        };
         let a = ray.direction.x.powi(2) + ray.direction.z.powi(2);
         if a.zeroish() {
             return self.intersect_caps(ray);
@@ -124,7 +118,7 @@ impl Capped for Cylinder {
 }
 
 impl HittableImpl for Cylinder {
-    fn intersect(&self, ray: Ray) -> Vec<Intersection> {
+    fn h_intersect(&self, ray: Ray) -> Vec<Intersection> {
         self.local_intersect(ray)
     }
 
@@ -144,7 +138,7 @@ impl HittableImpl for Cylinder {
 #[cfg(test)]
 mod test {
     use crate::cylinder::Cylinder;
-    use crate::hittable::HittableImpl;
+    use crate::hittable::Hittable;
     use crate::ray::Ray;
     use crate::roundf;
     use crate::vec3::TypedVec;

@@ -10,7 +10,7 @@ use std::cmp::Ordering;
 use std::fmt::Debug;
 
 pub trait HittableImpl {
-    fn intersect(&self, ray: Ray) -> Vec<Intersection>;
+    fn h_intersect(&self, ray: Ray) -> Vec<Intersection>;
     fn normal_at(&self, p: TypedVec) -> Result<TypedVec>;
 
     fn material(&self) -> &Material;
@@ -43,15 +43,26 @@ impl<'a, 'b> PartialOrd<dyn Hittable + 'b> for dyn Hittable + 'a {
     }
 }
 
-pub trait Hittable: HittableImpl + Debug {}
+pub trait Hittable: HittableImpl + Debug {
+    fn intersect(&self, ray: Ray) -> Vec<Intersection> {
+        let ray = if let Some(transform) = &self.transform() {
+            let t = transform.inverse().unwrap();
+            ray.transform(&t)
+        } else {
+            ray
+        };
+        self.h_intersect(ray)
+    }
+}
+
 impl<'a, T> Hittable for T where T: HittableImpl + Debug {}
 
 impl<'a, T> HittableImpl for &T
 where
     T: HittableImpl + Debug,
 {
-    fn intersect(&self, ray: Ray) -> Vec<Intersection> {
-        (*self).intersect(ray)
+    fn h_intersect(&self, ray: Ray) -> Vec<Intersection> {
+        (*self).h_intersect(ray)
     }
 
     fn normal_at(&self, p: TypedVec) -> Result<TypedVec> {

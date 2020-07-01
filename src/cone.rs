@@ -32,12 +32,6 @@ impl Default for Cone {
 
 impl Cone {
     fn local_intersect(&self, ray: Ray) -> Vec<Intersection> {
-        let ray = if let Some(transform) = &self.transform {
-            let t = transform.inverse().unwrap();
-            ray.transform(&t)
-        } else {
-            ray
-        };
         let a = ray.direction.x.powi(2) - ray.direction.y.powi(2) + ray.direction.z.powi(2);
         let b = 2.0 * ray.origin.x * ray.direction.x - 2.0 * ray.origin.y * ray.direction.y
             + 2.0 * ray.origin.z * ray.direction.z;
@@ -110,7 +104,7 @@ impl Capped for Cone {
 }
 
 impl HittableImpl for Cone {
-    fn intersect(&self, ray: Ray) -> Vec<Intersection> {
+    fn h_intersect(&self, ray: Ray) -> Vec<Intersection> {
         self.local_intersect(ray)
     }
     fn normal_at(&self, p: TypedVec) -> Result<TypedVec> {
@@ -129,7 +123,7 @@ impl HittableImpl for Cone {
 #[cfg(test)]
 mod test {
     use crate::cone::Cone;
-    use crate::hittable::HittableImpl;
+    use crate::hittable::Hittable;
     use crate::ray::Ray;
     use crate::roundf;
     use crate::vec3::TypedVec;
