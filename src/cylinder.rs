@@ -1,8 +1,8 @@
+use crate::hittable::{Hittable, HittableImpl};
 use crate::intersection::Intersection;
 use crate::material::Material;
 use crate::matrix::Matrix;
 use crate::ray::Ray;
-use crate::sphere::{Hittable, HittableImpl};
 use crate::vec3::TypedVec;
 use crate::{ZeroIsh, EPSILON};
 use anyhow::Result;
@@ -78,7 +78,7 @@ impl Cylinder {
 pub trait Capped {
     fn intersect_caps(&self, ray: Ray) -> Vec<Intersection>
     where
-        Self: HittableImpl + std::marker::Sized,
+        Self: Hittable + std::marker::Sized,
     {
         let mut xs = vec![];
         if !self.closed() || ray.direction.y.zeroish() {
@@ -123,26 +123,7 @@ impl Capped for Cylinder {
     }
 }
 
-impl HittableImpl for Cylinder {}
-impl HittableImpl for &Cylinder {}
-impl Hittable for Cylinder {
-    fn intersect(&self, ray: Ray) -> Vec<Intersection> {
-        self.local_intersect(ray)
-    }
-
-    fn normal_at(&self, p: TypedVec) -> Result<TypedVec> {
-        self.local_normal_at(p)
-    }
-
-    fn material(&self) -> &Material {
-        &self.material
-    }
-
-    fn transform(&self) -> &Option<Matrix<f64>> {
-        &self.transform
-    }
-}
-impl Hittable for &Cylinder {
+impl HittableImpl for Cylinder {
     fn intersect(&self, ray: Ray) -> Vec<Intersection> {
         self.local_intersect(ray)
     }
@@ -163,9 +144,9 @@ impl Hittable for &Cylinder {
 #[cfg(test)]
 mod test {
     use crate::cylinder::Cylinder;
+    use crate::hittable::HittableImpl;
     use crate::ray::Ray;
     use crate::roundf;
-    use crate::sphere::Hittable;
     use crate::vec3::TypedVec;
 
     #[test]

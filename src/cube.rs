@@ -1,8 +1,8 @@
+use crate::hittable::HittableImpl;
 use crate::intersection::Intersection;
 use crate::material::Material;
 use crate::matrix::Matrix;
 use crate::ray::Ray;
-use crate::sphere::{Hittable, HittableImpl};
 use crate::vec3::TypedVec;
 use anyhow::Result;
 
@@ -68,27 +68,7 @@ impl Cube {
     }
 }
 
-impl HittableImpl for Cube {}
-impl HittableImpl for &Cube {}
-
-impl Hittable for Cube {
-    fn intersect(&self, ray: Ray) -> Vec<Intersection> {
-        self.local_intersect(ray)
-    }
-
-    fn normal_at(&self, p: TypedVec) -> Result<TypedVec> {
-        self.local_normal_at(p)
-    }
-
-    fn material(&self) -> &Material {
-        &self.material
-    }
-
-    fn transform(&self) -> &Option<Matrix<f64>> {
-        &self.transform
-    }
-}
-impl Hittable for &Cube {
+impl HittableImpl for Cube {
     fn intersect(&self, ray: Ray) -> Vec<Intersection> {
         self.local_intersect(ray)
     }
@@ -109,8 +89,8 @@ impl Hittable for &Cube {
 #[cfg(test)]
 mod test {
     use crate::cube::Cube;
+    use crate::hittable::HittableImpl;
     use crate::ray::Ray;
-    use crate::sphere::Hittable;
     use crate::vec3::TypedVec;
 
     #[test]

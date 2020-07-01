@@ -1,7 +1,7 @@
 use crate::colour::{Colour, BLACK, WHITE};
+use crate::hittable::Hittable;
 use crate::lighting::Point;
 use crate::pattern::Pattern;
-use crate::sphere::HittableImpl;
 use crate::vec3::TypedVec;
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
@@ -60,7 +60,7 @@ impl Material {
 
     pub fn lighting<'l>(
         &self,
-        object: &'l dyn HittableImpl,
+        object: &'l dyn Hittable,
         light: Point,
         point: TypedVec,
         eyev: TypedVec,

@@ -1,5 +1,5 @@
+use crate::hittable::Hittable;
 use crate::ray::Ray;
-use crate::sphere::HittableImpl;
 use crate::vec3::TypedVec;
 use crate::EPSILON;
 use std::cmp::Ordering;
@@ -11,7 +11,7 @@ pub struct PreComp<'a> {
     pub(crate) eyev: TypedVec,
     inside: bool,
     pub(crate) normalv: TypedVec,
-    pub(crate) obj: &'a dyn HittableImpl,
+    pub(crate) obj: &'a dyn Hittable,
     pub(crate) point: TypedVec,
     pub(crate) over_point: TypedVec,
     pub(crate) under_point: TypedVec,
@@ -41,11 +41,11 @@ impl<'a> PreComp<'a> {
 #[derive(Clone, Debug, PartialEq)]
 pub struct Intersection<'a> {
     pub t: f64,
-    pub obj: &'a dyn HittableImpl,
+    pub obj: &'a dyn Hittable,
 }
 
 impl<'a> Intersection<'a> {
-    pub fn new(t: f64, obj: &'a dyn HittableImpl) -> Self {
+    pub fn new(t: f64, obj: &'a dyn Hittable) -> Self {
         Intersection { t, obj }
     }
     pub fn precompute(&self, ray: Ray, xs: &Intersections) -> PreComp {
@@ -61,7 +61,7 @@ impl<'a> Intersection<'a> {
         let over_point = point + normalv * EPSILON;
         let under_point = point - normalv * EPSILON;
         let reflectv = ray.direction.reflect(normalv);
-        let mut containers: Vec<&dyn HittableImpl> = vec![];
+        let mut containers: Vec<&dyn Hittable> = vec![];
         let mut n1 = 0f64;
         let mut n2 = 0f64;
         for i in xs.clone().into_iter() {

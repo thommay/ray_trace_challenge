@@ -1,9 +1,9 @@
 use crate::cylinder::Capped;
+use crate::hittable::HittableImpl;
 use crate::intersection::Intersection;
 use crate::material::Material;
 use crate::matrix::Matrix;
 use crate::ray::Ray;
-use crate::sphere::{Hittable, HittableImpl};
 use crate::vec3::TypedVec;
 use crate::{ZeroIsh, EPSILON};
 use anyhow::Result;
@@ -109,29 +109,10 @@ impl Capped for Cone {
     }
 }
 
-impl HittableImpl for Cone {}
-impl HittableImpl for &Cone {}
-impl Hittable for Cone {
+impl HittableImpl for Cone {
     fn intersect(&self, ray: Ray) -> Vec<Intersection> {
         self.local_intersect(ray)
     }
-    fn normal_at(&self, p: TypedVec) -> Result<TypedVec> {
-        self.local_normal_at(p)
-    }
-
-    fn material(&self) -> &Material {
-        &self.material
-    }
-
-    fn transform(&self) -> &Option<Matrix<f64>> {
-        &self.transform
-    }
-}
-impl Hittable for &Cone {
-    fn intersect(&self, ray: Ray) -> Vec<Intersection> {
-        self.local_intersect(ray)
-    }
-
     fn normal_at(&self, p: TypedVec) -> Result<TypedVec> {
         self.local_normal_at(p)
     }
@@ -148,9 +129,9 @@ impl Hittable for &Cone {
 #[cfg(test)]
 mod test {
     use crate::cone::Cone;
+    use crate::hittable::HittableImpl;
     use crate::ray::Ray;
     use crate::roundf;
-    use crate::sphere::Hittable;
     use crate::vec3::TypedVec;
 
     #[test]

@@ -1,8 +1,8 @@
+use crate::hittable::HittableImpl;
 use crate::intersection::Intersection;
 use crate::material::Material;
 use crate::matrix::Matrix;
 use crate::ray::Ray;
-use crate::sphere::{Hittable, HittableImpl};
 use crate::vec3::TypedVec;
 use crate::ZeroIsh;
 use anyhow::Result;
@@ -39,7 +39,7 @@ impl Default for Plane {
     }
 }
 
-impl Hittable for Plane {
+impl HittableImpl for Plane {
     fn intersect(&self, ray: Ray) -> Vec<Intersection> {
         self.local_intersect(ray)
     }
@@ -54,32 +54,12 @@ impl Hittable for Plane {
         &self.transform
     }
 }
-
-impl Hittable for &Plane {
-    fn intersect(&self, ray: Ray) -> Vec<Intersection> {
-        self.local_intersect(ray)
-    }
-
-    fn normal_at(&self, _p: TypedVec) -> Result<TypedVec> {
-        Ok(TypedVec::vector(0f64, 1f64, 0f64))
-    }
-    fn material(&self) -> &Material {
-        &self.material
-    }
-
-    fn transform(&self) -> &Option<Matrix<f64>> {
-        &self.transform
-    }
-}
-
-impl HittableImpl for Plane {}
-impl HittableImpl for &Plane {}
 
 #[cfg(test)]
 mod test {
+    use crate::hittable::HittableImpl;
     use crate::plane::Plane;
     use crate::ray::Ray;
-    use crate::sphere::Hittable;
     use crate::vec3::TypedVec;
 
     #[test]

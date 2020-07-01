@@ -3,12 +3,13 @@ use ray_trace_challenge::colour::*;
 use ray_trace_challenge::cone::Cone;
 use ray_trace_challenge::cube::Cube;
 use ray_trace_challenge::cylinder::Cylinder;
+use ray_trace_challenge::hittable::Hittable;
 use ray_trace_challenge::lighting::Point;
 use ray_trace_challenge::matrix::{Axis, Matrix};
 use ray_trace_challenge::pattern::Pattern;
 use ray_trace_challenge::pattern::PatternType::Stripe;
 use ray_trace_challenge::plane::Plane;
-use ray_trace_challenge::sphere::{HittableImpl, Sphere};
+use ray_trace_challenge::sphere::Sphere;
 use ray_trace_challenge::vec3::TypedVec;
 use ray_trace_challenge::world::World;
 use std::f64::consts::PI;
@@ -114,7 +115,7 @@ fn main() {
     top.material.reflective = 1.0;
     top.material.specular = 1f64;
     top.transform = Some(Matrix::translation(0.0, 1.5, 0.0) * Matrix::scaling(0.25, 0.25, 0.25));
-    let mut items: Vec<&dyn HittableImpl> = vec![&plane, &back_wall, &cone, &top];
+    let mut items: Vec<&dyn Hittable> = vec![&plane, &back_wall, &cone, &top];
     world.objects.append(&mut items);
 
     // Good

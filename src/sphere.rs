@@ -1,12 +1,10 @@
-use crate::colour::Colour;
+use crate::hittable::HittableImpl;
 use crate::intersection::Intersection;
 use crate::material::Material;
 use crate::matrix::Matrix;
-use crate::pattern::Pattern;
 use crate::ray::Ray;
 use crate::vec3::TypedVec;
 use anyhow::Result;
-use std::cmp::Ordering;
 use std::fmt::Debug;
 
 #[derive(Clone, Debug, Default, PartialOrd, PartialEq)]
@@ -75,63 +73,7 @@ impl Sphere {
     }
 }
 
-pub trait Hittable {
-    fn intersect(&self, ray: Ray) -> Vec<Intersection>;
-    fn normal_at(&self, p: TypedVec) -> Result<TypedVec>;
-
-    fn material(&self) -> &Material;
-    fn transform(&self) -> &Option<Matrix<f64>>;
-
-    fn pattern_at(&self, pattern: &Pattern, point: TypedVec) -> Result<Colour> {
-        let object_point = if let Some(t) = self.transform() {
-            t.inverse()? * point
-        } else {
-            point
-        };
-        let world_point = if let Some(p) = pattern.transform() {
-            p.inverse()? * object_point
-        } else {
-            object_point
-        };
-        Ok(pattern.at(world_point))
-    }
-}
-
-impl<'a, 'b> PartialEq<dyn HittableImpl + 'b> for dyn HittableImpl + 'a {
-    fn eq(&self, other: &dyn HittableImpl) -> bool {
-        self.material() == other.material() && self.transform() == other.transform()
-    }
-}
-
-impl<'a, 'b> PartialOrd<dyn HittableImpl + 'b> for dyn HittableImpl + 'a {
-    fn partial_cmp(&self, other: &dyn HittableImpl) -> Option<Ordering> {
-        self.material().partial_cmp(other.material())
-    }
-}
-
-pub trait HittableImpl: Hittable + Debug {}
-impl HittableImpl for Sphere {}
-impl HittableImpl for &Sphere {}
-
-impl Hittable for Sphere {
-    fn intersect(&self, ray: Ray) -> Vec<Intersection> {
-        self.local_intersect(ray)
-    }
-
-    fn normal_at(&self, p: TypedVec) -> Result<TypedVec> {
-        self.local_normal_at(p)
-    }
-
-    fn material(&self) -> &Material {
-        &self.material
-    }
-
-    fn transform(&self) -> &Option<Matrix<f64>> {
-        &self.transform
-    }
-}
-
-impl Hittable for &Sphere {
+impl HittableImpl for Sphere {
     fn intersect(&self, ray: Ray) -> Vec<Intersection> {
         self.local_intersect(ray)
     }
@@ -152,11 +94,12 @@ impl Hittable for &Sphere {
 #[cfg(test)]
 mod test {
     use crate::colour::*;
+    use crate::hittable::HittableImpl;
     use crate::matrix::{Axis, Matrix};
     use crate::pattern::Pattern;
     use crate::pattern::PatternType::Stripe;
     use crate::ray::Ray;
-    use crate::sphere::{Hittable, Sphere};
+    use crate::sphere::Sphere;
     use crate::vec3::TypedVec;
 
     #[test]

@@ -4,6 +4,7 @@ pub mod colour;
 pub mod cone;
 pub mod cube;
 pub mod cylinder;
+pub mod hittable;
 pub mod intersection;
 pub mod lighting;
 pub mod material;

@@ -1,15 +1,15 @@
 use crate::colour::{Colour, BLACK};
+use crate::hittable::Hittable;
 use crate::intersection::{Intersection, Intersections, PreComp};
 use crate::lighting::Point;
 use crate::ray::Ray;
-use crate::sphere::HittableImpl;
 use crate::vec3::TypedVec;
 use std::fmt::Debug;
 
 #[derive(Clone, Debug, PartialOrd, PartialEq)]
 pub struct World<'a> {
     light: Point,
-    pub objects: Vec<&'a dyn HittableImpl>,
+    pub objects: Vec<&'a dyn Hittable>,
 }
 
 impl<'a> Default for World<'a> {
