@@ -9,6 +9,7 @@ pub enum PatternType {
     Gradient,
     Ring,
     Stripe,
+    Test,
     None,
 }
 
@@ -18,7 +19,7 @@ pub struct Pattern {
     b: Colour,
     is: PatternType,
     perturb: bool,
-    pub(crate) transform: Option<Matrix<f64>>,
+    pub transform: Option<Matrix<f64>>,
 }
 
 impl Default for Pattern {
@@ -83,13 +84,24 @@ impl Pattern {
         }
     }
 
+    pub fn test_pattern() -> Self {
+        Pattern {
+            a: *WHITE,
+            b: *WHITE,
+            perturb: false,
+            is: PatternType::Test,
+            transform: None,
+        }
+    }
+
     pub fn at(&self, point: TypedVec) -> Colour {
         match self.is {
             PatternType::Checker => self.checker_at(point),
             PatternType::Gradient => self.gradient_at(point),
             PatternType::Ring => self.ring_at(point),
             PatternType::Stripe => self.stripe_at(point),
-            PatternType::None => self.test_pattern_at(point),
+            PatternType::Test => self.test_pattern_at(point),
+            PatternType::None => self.a,
         }
     }
 
@@ -258,7 +270,7 @@ mod test {
     fn test_pattern_object_transform() {
         let mut shape = Sphere::default();
         shape.transform = Some(Matrix::scaling(2.0, 2.0, 2.0));
-        let pattern = Pattern::default();
+        let pattern = Pattern::test_pattern();
         let c = shape.pattern_at(&pattern, TypedVec::point(2.0, 3.0, 4.0));
         assert_eq!(c.unwrap(), Colour::new(1.0, 1.5, 2.0))
     }
@@ -266,7 +278,7 @@ mod test {
     #[test]
     fn test_pattern_pattern_transform() {
         let shape = Sphere::default();
-        let mut pattern = Pattern::default();
+        let mut pattern = Pattern::test_pattern();
         pattern.transform = Some(Matrix::scaling(2.0, 2.0, 2.0));
         let c = shape.pattern_at(&pattern, TypedVec::point(2.0, 3.0, 4.0));
         assert_eq!(c.unwrap(), Colour::new(1.0, 1.5, 2.0))
@@ -276,7 +288,7 @@ mod test {
     fn test_pattern_object_pattern_transform() {
         let mut shape = Sphere::default();
         shape.transform = Some(Matrix::scaling(2.0, 2.0, 2.0));
-        let mut pattern = Pattern::default();
+        let mut pattern = Pattern::test_pattern();
         pattern.transform = Some(Matrix::translation(0.5, 1.0, 1.5));
         let c = shape.pattern_at(&pattern, TypedVec::point(2.5, 3.0, 3.5));
         assert_eq!(c.unwrap(), Colour::new(0.75, 0.5, 0.25))

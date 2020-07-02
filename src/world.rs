@@ -508,7 +508,7 @@ pub mod test {
                 diffuse: 0.7,
                 specular: 0.2,
                 ambient: 1f64,
-                pattern: Some(Pattern::default()),
+                pattern: Some(Pattern::test_pattern()),
                 ..Default::default()
             },
             ..Default::default()
