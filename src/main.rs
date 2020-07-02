@@ -7,7 +7,6 @@ use ray_trace_challenge::hittable::Hittable;
 use ray_trace_challenge::lighting::Point;
 use ray_trace_challenge::matrix::{Axis, Matrix};
 use ray_trace_challenge::pattern::Pattern;
-use ray_trace_challenge::pattern::PatternType::Stripe;
 use ray_trace_challenge::plane::Plane;
 use ray_trace_challenge::sphere::Sphere;
 use ray_trace_challenge::vec3::TypedVec;
@@ -103,8 +102,7 @@ fn main() {
         maximum: 0.0,
         ..Default::default()
     };
-    cone.material.reflective = 1.0;
-    cone.material.specular = 1f64;
+    cone.material.ambient = 1.0;
     cone.transform = Some(Matrix::translation(0.0, 2.0, 0.0) * Matrix::scaling(0.25, 0.25, 0.25));
 
     let mut top = Cylinder {
@@ -112,10 +110,21 @@ fn main() {
         minimum: 0.0,
         ..Default::default()
     };
-    top.material.reflective = 1.0;
-    top.material.specular = 1f64;
+    top.material.ambient = 1.0;
     top.transform = Some(Matrix::translation(0.0, 1.5, 0.0) * Matrix::scaling(0.25, 0.25, 0.25));
-    let mut items: Vec<&dyn Hittable> = vec![&plane, &back_wall, &cone, &top];
+
+    let mut middle = top.clone();
+    let mut stripes = Pattern::stripe(*WHITE, *BLACK, false);
+    stripes.transform =
+        Some(Matrix::rotation(Axis::Y, PI / 4.0) * Matrix::scaling(0.25, 0.25, 0.25));
+    middle.material.pattern = Option::from(stripes);
+    middle.transform =
+        Some(Matrix::translation(0.0, 1.25, 0.0) * Matrix::scaling(0.25, 0.25, 0.25));
+    let mut b1 = top.clone();
+    b1.transform = Some(Matrix::translation(0.0, 1.0, 0.0) * Matrix::scaling(0.25, 0.25, 0.25));
+    let mut b2 = top.clone();
+    b2.transform = Some(Matrix::translation(0.0, 0.75, 0.0) * Matrix::scaling(0.25, 0.25, 0.25));
+    let mut items: Vec<&dyn Hittable> = vec![&cone, &top, &middle, &b1, &b2];
     world.objects.append(&mut items);
 
     // Good
