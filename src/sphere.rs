@@ -30,7 +30,7 @@ impl Sphere {
         }
     }
 
-    fn local_intersect<'a>(&self, ray: Ray) -> Vec<Intersection> {
+    fn local_intersect(&self, ray: Ray) -> Vec<Intersection> {
         let mut ret = vec![];
         let sphere_to_ray = ray.origin - TypedVec::point(0.0, 0.0, 0.0);
         let a: f64 = ray.direction.dot_product(ray.direction);

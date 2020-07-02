@@ -187,6 +187,7 @@ lazy_static! {
     };
 }
 
+#[allow(clippy::many_single_char_names)]
 fn perlin_noise(x: f64, y: f64, z: f64) -> f64 {
     let xi = x as usize & 255;
     let yi = y as usize & 255;

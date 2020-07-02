@@ -4,6 +4,7 @@ use crate::material::Material;
 use crate::matrix::Matrix;
 use crate::ray::Ray;
 use crate::vec3::TypedVec;
+use crate::EPSILON;
 use anyhow::Result;
 
 #[derive(Clone, Debug, Default, PartialOrd, PartialEq)]
@@ -52,12 +53,12 @@ impl Cube {
             .iter()
             .max_by(|x, y| x.partial_cmp(y).unwrap())
             .unwrap();
-        if maxc == &p.x.abs() {
-            return Ok(TypedVec::vector(p.x, 0f64, 0f64));
-        } else if maxc == &p.y.abs() {
-            return Ok(TypedVec::vector(0f64, p.y, 0f64));
+        if (maxc - p.x.abs()).abs() < EPSILON {
+            Ok(TypedVec::vector(p.x, 0f64, 0f64))
+        } else if (maxc - p.y.abs()).abs() < EPSILON {
+            Ok(TypedVec::vector(0f64, p.y, 0f64))
         } else {
-            return Ok(TypedVec::vector(0f64, 0f64, p.z));
+            Ok(TypedVec::vector(0f64, 0f64, p.z))
         }
     }
 }

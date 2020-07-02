@@ -25,7 +25,7 @@ impl std::fmt::Display for TypedVec {
             } else if val > 1f64 {
                 1.0
             } else {
-                val.into()
+                val
             }
         }
 
@@ -130,6 +130,7 @@ impl TypedVec {
 impl Add for TypedVec {
     type Output = Self;
 
+    #[allow(clippy::suspicious_arithmetic_impl)]
     fn add(self, rhs: Self) -> Self::Output {
         let (is, w) = if self.is_point() && rhs.is_point() {
             panic!("can't add two points");
@@ -152,6 +153,7 @@ impl Add for TypedVec {
 impl Sub for TypedVec {
     type Output = Self;
 
+    #[allow(clippy::suspicious_arithmetic_impl)]
     fn sub(self, rhs: Self) -> Self::Output {
         let (is, w) = if self.is_point() && rhs.is_vector() {
             (VecType::Point, 1f64)

@@ -131,9 +131,9 @@ where
     pub fn set(&mut self, row: usize, col: usize, item: T) -> bool {
         if let Some(p) = self.get_mut(row, col) {
             *p = item;
-            return true;
+            true
         } else {
-            return false;
+            false
         }
     }
 
@@ -154,7 +154,7 @@ where
     }
 
     pub(crate) fn transpose(&self) -> Matrix<T> {
-        let out = Self {
+        Self {
             rows: self.rows,
             cols: self.cols,
             data: {
@@ -166,8 +166,7 @@ where
                 }
                 data
             },
-        };
-        out
+        }
     }
 
     fn determinant(&self) -> T {
@@ -196,7 +195,7 @@ where
                         if c == col {
                             continue;
                         }
-                        let n = self.data[c + r * self.cols].clone();
+                        let n = self.data[c + r * self.cols];
                         d.push(n);
                     }
                 }
@@ -234,7 +233,7 @@ where
             for col in 0..self.cols {
                 let c = self.cofactor(row, col);
                 // using row for the column and vice versa does the transpose
-                s.set(col, row, c / det.clone());
+                s.set(col, row, c / det);
             }
         }
         Ok(s)
@@ -358,7 +357,7 @@ where
     }
 }
 
-fn mul_int<T>(m: &Matrix<T>, vec: &Vec<f64>, row: usize) -> f64
+fn mul_int<T>(m: &Matrix<T>, vec: &[f64], row: usize) -> f64
 where
     T: Mul<Output = T>
         + Sub<Output = T>

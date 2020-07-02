@@ -34,30 +34,6 @@ impl Default for Material {
 }
 
 impl Material {
-    pub fn new(
-        ambient: f64,
-        colour: Colour,
-        diffuse: f64,
-        reflective: f64,
-        refractive_index: f64,
-        shininess: f64,
-        specular: f64,
-        transparency: f64,
-        pattern: Option<Pattern>,
-    ) -> Self {
-        Material {
-            ambient,
-            colour,
-            diffuse,
-            reflective,
-            refractive_index,
-            shininess,
-            specular,
-            pattern,
-            transparency,
-        }
-    }
-
     pub fn lighting<'l>(
         &self,
         object: &'l dyn Hittable,
@@ -172,7 +148,13 @@ mod test {
     #[test]
     fn test_material_with_pattern() {
         let p = Pattern::new(Stripe, *WHITE, *BLACK, false);
-        let m = Material::new(1f64, *WHITE, 0f64, 0f64, 1.0, 200f64, 0f64, 0.0, Some(p));
+        let m = Material {
+            ambient: 1.0,
+            diffuse: 0.0,
+            specular: 0.0,
+            pattern: Some(p),
+            ..Default::default()
+        };
         let eyev = TypedVec::vector(0f64, 0f64, -1f64);
         let normalv = TypedVec::vector(0f64, 0f64, -1f64);
         let l = lighting::Point::new(TypedVec::point(0f64, 0f64, -10f64), *WHITE);

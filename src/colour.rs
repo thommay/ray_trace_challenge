@@ -46,7 +46,7 @@ impl std::fmt::Display for Colour {
             } else if val > 1f64 {
                 1.0
             } else {
-                val.into()
+                val
             }
         }
 

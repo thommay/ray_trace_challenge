@@ -108,7 +108,7 @@ impl<'a> PartialOrd for Intersection<'a> {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Default, Clone)]
 pub struct Intersections<'a>(Vec<Intersection<'a>>);
 
 impl<'a> Intersections<'a> {
@@ -131,6 +131,9 @@ impl<'a> Intersections<'a> {
         self.0.len()
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
     pub fn hit(&mut self) -> Option<&Intersection> {
         self.0.sort_by(|a, b| a.partial_cmp(b).unwrap());
 
