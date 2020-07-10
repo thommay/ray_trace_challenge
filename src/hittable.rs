@@ -77,3 +77,24 @@ where
         (*self).transform()
     }
 }
+
+impl<'a, T> HittableImpl for &mut T
+where
+    T: HittableImpl + Debug,
+{
+    fn h_intersect(&self, ray: Ray) -> Vec<Intersection> {
+        (*self).h_intersect(ray)
+    }
+
+    fn normal_at(&self, p: TypedVec) -> Result<TypedVec> {
+        (*self).normal_at(p)
+    }
+
+    fn material(&self) -> &Material {
+        (*self).material()
+    }
+
+    fn transform(&self) -> &Option<Matrix<f64>> {
+        (*self).transform()
+    }
+}

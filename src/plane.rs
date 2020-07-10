@@ -3,16 +3,12 @@ use crate::intersection::Intersection;
 use crate::material::Material;
 use crate::matrix::Matrix;
 use crate::ray::Ray;
+use crate::shape;
 use crate::vec3::TypedVec;
 use crate::ZeroIsh;
 use anyhow::Result;
 
-#[derive(Clone, Debug, PartialOrd, PartialEq)]
-pub struct Plane {
-    pub material: Material,
-    pub transform: Option<Matrix<f64>>,
-}
-
+shape!(Plane);
 impl Plane {
     fn local_intersect(&self, ray: Ray) -> Vec<Intersection> {
         let mut ret = Vec::new();
@@ -21,15 +17,6 @@ impl Plane {
         }
         ret.push(Intersection::new(-ray.origin.y / ray.direction.y, self));
         ret
-    }
-}
-
-impl Default for Plane {
-    fn default() -> Self {
-        Self {
-            transform: None,
-            material: Material::default(),
-        }
     }
 }
 

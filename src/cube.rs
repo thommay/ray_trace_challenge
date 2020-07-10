@@ -4,14 +4,10 @@ use crate::material::Material;
 use crate::matrix::Matrix;
 use crate::ray::Ray;
 use crate::vec3::TypedVec;
-use crate::EPSILON;
+use crate::{shape, EPSILON};
 use anyhow::Result;
 
-#[derive(Clone, Debug, Default, PartialOrd, PartialEq)]
-pub struct Cube {
-    pub transform: Option<Matrix<f64>>,
-    pub material: Material,
-}
+shape!(Cube);
 
 impl Cube {
     fn check_axis(&self, origin: f64, direction: f64) -> (f64, f64) {

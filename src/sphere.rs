@@ -3,15 +3,12 @@ use crate::intersection::Intersection;
 use crate::material::Material;
 use crate::matrix::Matrix;
 use crate::ray::Ray;
+use crate::shape;
 use crate::vec3::TypedVec;
 use anyhow::Result;
 use std::fmt::Debug;
 
-#[derive(Clone, Debug, Default, PartialOrd, PartialEq)]
-pub struct Sphere {
-    pub transform: Option<Matrix<f64>>,
-    pub material: Material,
-}
+shape!(Sphere);
 
 impl Sphere {
     pub fn new() -> Self {

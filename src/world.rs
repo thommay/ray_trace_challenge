@@ -551,6 +551,7 @@ pub mod test {
                 refractive_index: 1.5,
                 ..Default::default()
             },
+            ..Default::default()
         };
         let ball = Sphere {
             transform: Some(Matrix::translation(0f64, -3.5f64, -0.5f64)),
@@ -559,6 +560,7 @@ pub mod test {
                 ambient: 0.5,
                 ..Default::default()
             },
+            ..Default::default()
         };
         w.objects.push(&floor);
         w.objects.push(&ball);
@@ -588,6 +590,7 @@ pub mod test {
                 refractive_index: 1.5,
                 ..Default::default()
             },
+            ..Default::default()
         };
         let ball = Sphere {
             transform: Some(Matrix::translation(0f64, -3.5f64, -0.5f64)),
@@ -596,6 +599,7 @@ pub mod test {
                 ambient: 0.5,
                 ..Default::default()
             },
+            ..Default::default()
         };
         w.objects.push(&floor);
         w.objects.push(&ball);

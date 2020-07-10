@@ -87,66 +87,72 @@ mod test {
 
     lazy_static! {
         static ref M: Material = Material::default();
-        static ref S: Sphere = Sphere::default();
         static ref POSITION: TypedVec = TypedVec::point(0f64, 0f64, 0f64);
     }
 
     #[test]
     fn test_light_behind_eye() {
+        let s = Sphere::default();
         let eyev = TypedVec::vector(0f64, 0f64, -1f64);
         let normalv = TypedVec::vector(0f64, 0f64, -1f64);
         let l = lighting::Point::new(TypedVec::point(0f64, 0f64, -10f64), *WHITE);
-        let r = M.lighting(&*S, l, *POSITION, eyev, normalv, false);
+        let r = M.lighting(&s, l, *POSITION, eyev, normalv, false);
         assert_eq!(r, Colour::new(1.9, 1.9, 1.9))
     }
 
     #[test]
     fn test_light_behind_eye_off_45() {
+        let s = Sphere::default();
         let eyev = TypedVec::vector(0f64, 2f64.sqrt() / 2f64, -2f64.sqrt() / 2f64);
         let normalv = TypedVec::vector(0f64, 0f64, -1f64);
         let l = lighting::Point::new(TypedVec::point(0f64, 0f64, -10f64), *WHITE);
-        let r = M.lighting(&*S, l, *POSITION, eyev, normalv, false);
+        let r = M.lighting(&s, l, *POSITION, eyev, normalv, false);
         assert_eq!(r, Colour::new(1.0, 1.0, 1.0))
     }
 
     #[test]
     fn test_light_eye_opp_surface_off_45() {
+        let s = Sphere::default();
         let eyev = TypedVec::vector(0f64, 0f64, -1f64);
         let normalv = TypedVec::vector(0f64, 0f64, -1f64);
         let l = lighting::Point::new(TypedVec::point(0f64, 10f64, -10f64), *WHITE);
-        let r = M.lighting(&*S, l, *POSITION, eyev, normalv, false);
+        let r = M.lighting(&s, l, *POSITION, eyev, normalv, false);
         assert_eq!(r.round(10000f64), Colour::new(0.7364, 0.7364, 0.7364))
     }
 
     #[test]
     fn test_light_reflection_vec() {
+        let s = Sphere::default();
         let eyev = TypedVec::vector(0f64, -2f64.sqrt() / 2f64, -2f64.sqrt() / 2f64);
         let normalv = TypedVec::vector(0f64, 0f64, -1f64);
         let l = lighting::Point::new(TypedVec::point(0f64, 10f64, -10f64), *WHITE);
-        let r = M.lighting(&*S, l, *POSITION, eyev, normalv, false);
+        let r = M.lighting(&s, l, *POSITION, eyev, normalv, false);
         assert_eq!(r.round(10000f64), Colour::new(1.6364, 1.6364, 1.6364))
     }
 
     #[test]
     fn test_light_behind_surface() {
+        let s = Sphere::default();
         let eyev = TypedVec::vector(0f64, 0f64, -1f64);
         let normalv = TypedVec::vector(0f64, 0f64, -1f64);
         let l = lighting::Point::new(TypedVec::point(0f64, 0f64, 10f64), *WHITE);
-        let r = M.lighting(&*S, l, *POSITION, eyev, normalv, false);
+        let r = M.lighting(&s, l, *POSITION, eyev, normalv, false);
         assert_eq!(r.round(100f64), Colour::new(0.1, 0.1, 0.1))
     }
 
     #[test]
     fn test_surface_in_shadow() {
+        let s = Sphere::default();
         let eyev = TypedVec::vector(0f64, 0f64, -1f64);
         let normalv = TypedVec::vector(0f64, 0f64, -1f64);
         let l = lighting::Point::new(TypedVec::point(0f64, 0f64, -10f64), *WHITE);
-        let r = M.lighting(&*S, l, *POSITION, eyev, normalv, true);
+        let r = M.lighting(&s, l, *POSITION, eyev, normalv, true);
         assert_eq!(r.round(100f64), Colour::new(0.1, 0.1, 0.1))
     }
 
     #[test]
     fn test_material_with_pattern() {
+        let s = Sphere::default();
         let p = Pattern::new(Stripe, *WHITE, *BLACK, false);
         let m = Material {
             ambient: 1.0,
@@ -158,22 +164,8 @@ mod test {
         let eyev = TypedVec::vector(0f64, 0f64, -1f64);
         let normalv = TypedVec::vector(0f64, 0f64, -1f64);
         let l = lighting::Point::new(TypedVec::point(0f64, 0f64, -10f64), *WHITE);
-        let c1 = m.lighting(
-            &*S,
-            l,
-            TypedVec::point(0.9, 0f64, 0f64),
-            eyev,
-            normalv,
-            true,
-        );
-        let c2 = m.lighting(
-            &*S,
-            l,
-            TypedVec::point(1.1, 0f64, 0f64),
-            eyev,
-            normalv,
-            true,
-        );
+        let c1 = m.lighting(&s, l, TypedVec::point(0.9, 0f64, 0f64), eyev, normalv, true);
+        let c2 = m.lighting(&s, l, TypedVec::point(1.1, 0f64, 0f64), eyev, normalv, true);
         assert_eq!(c1, *WHITE);
         assert_eq!(c2, *BLACK);
     }

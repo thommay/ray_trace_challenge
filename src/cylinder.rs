@@ -4,18 +4,12 @@ use crate::material::Material;
 use crate::matrix::Matrix;
 use crate::ray::Ray;
 use crate::vec3::TypedVec;
-use crate::{ZeroIsh, EPSILON};
+use crate::{shape, ZeroIsh, EPSILON};
+
 use anyhow::Result;
 use std::f64::INFINITY;
 
-#[derive(Clone, Debug, PartialOrd, PartialEq)]
-pub struct Cylinder {
-    pub transform: Option<Matrix<f64>>,
-    pub material: Material,
-    pub minimum: f64,
-    pub maximum: f64,
-    pub closed: bool,
-}
+shape!(Cylinder, nodefault, minimum -> f64, maximum -> f64, closed -> bool);
 
 impl Default for Cylinder {
     fn default() -> Self {
@@ -25,6 +19,7 @@ impl Default for Cylinder {
             transform: None,
             material: Material::default(),
             closed: false,
+            parent: None,
         }
     }
 }
