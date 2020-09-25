@@ -5,37 +5,43 @@ use crate::matrix::Matrix;
 use crate::ray::Ray;
 use crate::vec3::TypedVec;
 use anyhow::Result;
+use ray_trace_challenge_derive::Groupable;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-#[derive(Clone, Debug, Default, PartialOrd, PartialEq)]
-pub struct Group {
+mod tree;
+
+#[derive(Clone, Debug, Default, PartialOrd, PartialEq, Groupable)]
+pub struct Group<'a> {
     pub transform: Option<Matrix<f64>>,
     pub material: Material,
-    parent: Option<Rc<RefCell<Group>>>,
-    children: Vec<&'static dyn Hittable>,
+    pub parent: Option<Rc<RefCell<Group<'a>>>>,
+    pub children: Vec<&'a dyn Hittable>,
 }
 
-impl Group {
-    pub fn set_parent(&mut self, parent: &Rc<RefCell<Group>>) {
-        let parent = Rc::clone(parent);
-        self.parent = Some(parent);
-    }
+pub trait Groupable<'a> {
+    fn set_parent(&mut self, parent: &Rc<RefCell<Group<'a>>>);
+}
 
-    pub fn set_child<T>(&mut self, child: &'static T)
+impl<'a> Group<'a> {
+    pub fn set_child<T>(&'a mut self, child: &'a T)
     where
         T: Hittable,
     {
         self.children.push(child);
     }
+
+    fn local_normal_at(&self, _: TypedVec) -> Result<TypedVec> {
+        unreachable!()
+    }
 }
 
-impl HittableImpl for Group {
-    fn h_intersect(&self, ray: Ray) -> Vec<Intersection> {
+impl<'a> HittableImpl for Group<'a> {
+    fn h_intersect(&self, _ray: Ray) -> Vec<Intersection> {
         unimplemented!()
     }
 
-    fn normal_at(&self, p: TypedVec) -> Result<TypedVec> {
+    fn normal_at(&self, _p: TypedVec) -> Result<TypedVec> {
         unimplemented!()
     }
 
@@ -45,5 +51,27 @@ impl HittableImpl for Group {
 
     fn transform(&self) -> &Option<Matrix<f64>> {
         &self.transform
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    // use crate::group;
+    use crate::sphere::Sphere;
+    use std::cell::RefMut;
+
+    #[test]
+    fn test_add_child() {
+        let g = Rc::new(RefCell::new(Group::default()));
+        let mut s = Sphere::default();
+        // s.set_parent(&g);
+        // group!(p, s);
+        {
+            let mut mp: RefMut<_> = g.borrow_mut();
+            mp.set_child(&s);
+        }
+        s.set_parent(&g);
+        // assert_eq!(s.parent, Some(g))
     }
 }

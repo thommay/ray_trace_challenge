@@ -10,7 +10,7 @@ use std::fmt::Debug;
 
 shape!(Sphere);
 
-impl Sphere {
+impl<'a> Sphere<'a> {
     pub fn new() -> Self {
         Self::default()
     }
@@ -61,24 +61,6 @@ impl Sphere {
 
     pub fn set_material(&mut self, material: Material) {
         self.material = material;
-    }
-}
-
-impl HittableImpl for Sphere {
-    fn h_intersect(&self, ray: Ray) -> Vec<Intersection> {
-        self.local_intersect(ray)
-    }
-
-    fn normal_at(&self, p: TypedVec) -> Result<TypedVec> {
-        self.local_normal_at(p)
-    }
-
-    fn material(&self) -> &Material {
-        &self.material
-    }
-
-    fn transform(&self) -> &Option<Matrix<f64>> {
-        &self.transform
     }
 }
 

@@ -11,7 +11,7 @@ use std::f64::INFINITY;
 
 shape!(Cylinder, nodefault, minimum -> f64, maximum -> f64, closed -> bool);
 
-impl Default for Cylinder {
+impl<'a> Default for Cylinder<'a> {
     fn default() -> Self {
         Self {
             minimum: -INFINITY,
@@ -24,7 +24,7 @@ impl Default for Cylinder {
     }
 }
 
-impl Cylinder {
+impl<'a> Cylinder<'a> {
     fn local_intersect(&self, ray: Ray) -> Vec<Intersection> {
         let a = ray.direction.x.powi(2) + ray.direction.z.powi(2);
         if a.zeroish() {
@@ -92,7 +92,7 @@ pub trait Capped {
     fn check_caps(&self, ray: Ray, t: f64, y: f64) -> bool;
 }
 
-impl Capped for Cylinder {
+impl<'a> Capped for Cylinder<'a> {
     fn check_caps(&self, ray: Ray, t: f64, _: f64) -> bool {
         let x = ray.origin.x + t * ray.direction.x;
         let z = ray.origin.z + t * ray.direction.z;
@@ -109,24 +109,6 @@ impl Capped for Cylinder {
 
     fn maximum(&self) -> f64 {
         self.maximum
-    }
-}
-
-impl HittableImpl for Cylinder {
-    fn h_intersect(&self, ray: Ray) -> Vec<Intersection> {
-        self.local_intersect(ray)
-    }
-
-    fn normal_at(&self, p: TypedVec) -> Result<TypedVec> {
-        self.local_normal_at(p)
-    }
-
-    fn material(&self) -> &Material {
-        &self.material
-    }
-
-    fn transform(&self) -> &Option<Matrix<f64>> {
-        &self.transform
     }
 }
 

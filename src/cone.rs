@@ -11,7 +11,7 @@ use std::f64::INFINITY;
 
 shape!(Cone, nodefault, minimum -> f64, maximum -> f64, closed -> bool);
 
-impl Default for Cone {
+impl<'a> Default for Cone<'a> {
     fn default() -> Self {
         Self {
             minimum: -INFINITY,
@@ -24,7 +24,7 @@ impl Default for Cone {
     }
 }
 
-impl Cone {
+impl<'a> Cone<'a> {
     fn local_intersect(&self, ray: Ray) -> Vec<Intersection> {
         let a = ray.direction.x.powi(2) - ray.direction.y.powi(2) + ray.direction.z.powi(2);
         let b = 2.0 * ray.origin.x * ray.direction.x - 2.0 * ray.origin.y * ray.direction.y
@@ -77,7 +77,7 @@ impl Cone {
     }
 }
 
-impl Capped for Cone {
+impl<'a> Capped for Cone<'a> {
     fn closed(&self) -> bool {
         self.closed
     }
@@ -94,23 +94,6 @@ impl Capped for Cone {
         let x = ray.origin.x + t * ray.direction.x;
         let z = ray.origin.z + t * ray.direction.z;
         (x.powi(2) + z.powi(2)) <= y.abs()
-    }
-}
-
-impl HittableImpl for Cone {
-    fn h_intersect(&self, ray: Ray) -> Vec<Intersection> {
-        self.local_intersect(ray)
-    }
-    fn normal_at(&self, p: TypedVec) -> Result<TypedVec> {
-        self.local_normal_at(p)
-    }
-
-    fn material(&self) -> &Material {
-        &self.material
-    }
-
-    fn transform(&self) -> &Option<Matrix<f64>> {
-        &self.transform
     }
 }
 

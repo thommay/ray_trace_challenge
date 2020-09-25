@@ -78,6 +78,7 @@ where
     }
 }
 
+#[allow(unconditional_recursion)]
 impl<'a, T> HittableImpl for &mut T
 where
     T: HittableImpl + Debug,

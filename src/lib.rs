@@ -32,16 +32,40 @@ impl ZeroIsh for f64 {
 macro_rules! shape {
     (@real$name:ident, $($derive:meta):*, $($n:tt -> $t:ty)*) => {
         use crate::group::Group;
+        // use ray_trace_challenge_derive::Groupable;
+        use crate::group::Groupable;
         use std::cell::RefCell;
         use std::rc::Rc;
         #[derive($($derive,)*)]
-        pub struct $name {
+        pub struct $name<'a> {
             pub material: Material,
-            pub parent: Option<Rc<RefCell<Group>>>,
+            pub parent: Option<Rc<RefCell<Group<'a>>>>,
             pub transform: Option<Matrix<f64>>,
             $(
             pub $n: $t,
             )*
+        }
+
+        impl<'a> Groupable<'a> for $name<'a> {
+            fn set_parent(&mut self, parent: &Rc<RefCell<Group<'a>>>) {
+                let parent = Rc::clone(parent);
+                self.parent = Some(parent);
+            }
+        }
+
+        impl<'a> HittableImpl for $name<'a> {
+            fn h_intersect(&self, ray: Ray) -> Vec<Intersection> {
+                self.local_intersect(ray)
+            }
+            fn normal_at(&self, p: TypedVec) -> Result<TypedVec> {
+                self.local_normal_at(p)
+            }
+            fn material(&self) -> &Material {
+                &self.material
+            }
+            fn transform(&self) -> &Option<Matrix<f64>> {
+                &self.transform
+            }
         }
     };
     ($name:ident, nodefault, $($n:tt -> $t:ty),*) => {
@@ -52,6 +76,14 @@ macro_rules! shape {
     };
     ($name:ident) => {
         shape!(@real $name, Clone:Debug:Default:PartialOrd:PartialEq,);
+    };
+}
+
+#[macro_export]
+macro_rules! group {
+    ($parent:ident, $child:ident) => {
+        $parent.borrow_mut().set_child(&$child);
+        $child.set_parent(&$parent);
     };
 }
 

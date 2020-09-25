@@ -10,3 +10,4 @@ edition = "2018"
 num = "0.2"
 anyhow = "1.0"
 lazy_static = "1.4.0"
+ray_trace_challenge_derive = {path = "ray_trace_challenge_derive"}

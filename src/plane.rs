@@ -9,7 +9,11 @@ use crate::ZeroIsh;
 use anyhow::Result;
 
 shape!(Plane);
-impl Plane {
+impl<'a> Plane<'a> {
+    fn local_normal_at(&self, _: TypedVec) -> Result<TypedVec> {
+        Ok(TypedVec::vector(0f64, 1f64, 0f64))
+    }
+
     fn local_intersect(&self, ray: Ray) -> Vec<Intersection> {
         let mut ret = Vec::new();
         if ray.direction.y.zeroish() {
@@ -17,22 +21,6 @@ impl Plane {
         }
         ret.push(Intersection::new(-ray.origin.y / ray.direction.y, self));
         ret
-    }
-}
-
-impl HittableImpl for Plane {
-    fn h_intersect(&self, ray: Ray) -> Vec<Intersection> {
-        self.local_intersect(ray)
-    }
-    fn normal_at(&self, _p: TypedVec) -> Result<TypedVec> {
-        Ok(TypedVec::vector(0f64, 1f64, 0f64))
-    }
-    fn material(&self) -> &Material {
-        &self.material
-    }
-
-    fn transform(&self) -> &Option<Matrix<f64>> {
-        &self.transform
     }
 }
 

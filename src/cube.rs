@@ -9,7 +9,7 @@ use anyhow::Result;
 
 shape!(Cube);
 
-impl Cube {
+impl<'a> Cube<'a> {
     fn check_axis(&self, origin: f64, direction: f64) -> (f64, f64) {
         let tmin_numerator = -1f64 - origin;
         let tmax_numerator = 1f64 - origin;
@@ -56,24 +56,6 @@ impl Cube {
         } else {
             Ok(TypedVec::vector(0f64, 0f64, p.z))
         }
-    }
-}
-
-impl HittableImpl for Cube {
-    fn h_intersect(&self, ray: Ray) -> Vec<Intersection> {
-        self.local_intersect(ray)
-    }
-
-    fn normal_at(&self, p: TypedVec) -> Result<TypedVec> {
-        self.local_normal_at(p)
-    }
-
-    fn material(&self) -> &Material {
-        &self.material
-    }
-
-    fn transform(&self) -> &Option<Matrix<f64>> {
-        &self.transform
     }
 }
 
